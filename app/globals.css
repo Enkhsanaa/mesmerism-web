@@ -7,6 +7,8 @@
   --color-border: #333333;
 
   --color-background: var(--background);
+  --color-card-background: var(--card-background);
+  --color-button-yellow: var(--button-yellow);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
@@ -49,6 +51,8 @@
   /* --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0); */
   --background: #2f3136;
+  --card-background: #292b2f;
+  --button-yellow: #FAD02C;
   --foreground: #ffffff;
   --card: oklch(0.21 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
@@ -88,4 +92,10 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom checkbox styles to override component defaults */
+[data-slot="checkbox"][data-state="checked"] {
+  background-color: var(--button-yellow) !important;
+  border-color: var(--button-yellow) !important;
 }
