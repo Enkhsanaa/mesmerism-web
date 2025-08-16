@@ -190,11 +190,15 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
           console.log("subscribe status", status);
           if (status === "SUBSCRIBED") setIsConnected(true);
         });
+      console.log("setting channel", channel);
     });
 
     return () => {
       setIsConnected(false);
-      supabase.removeChannel(channel);
+      console.log("removing channel", channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [supabase, applyUpsert]);
 

@@ -2,7 +2,12 @@
 
 import { RealtimeChat } from "@/components/realtime-chat";
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -129,14 +134,15 @@ export function LivechatClient({ user }: LivechatClientProps) {
           </DialogTrigger>
           <DialogContent
             ref={dialogRef}
-            className="fixed inset-x-0 bottom-0 w-full h-[90vh] max-w-none p-0 border-0 rounded-t-3xl sm:rounded-3xl translate-y-0 translate-x-0 left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4"
+            className="fixed inset-x-0 bottom-0 w-full max-w-none p-0 border-0 rounded-t-3xl sm:rounded-3xl translate-y-0 translate-x-0 left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4"
           >
+            <DialogTitle className="sr-only">Live Chat</DialogTitle>
             {/* Swipe indicator */}
             <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-muted rounded-full opacity-60" />
 
             <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <h2 className="text-lg font-semibold">Live Chat</h2>
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
@@ -144,9 +150,9 @@ export function LivechatClient({ user }: LivechatClientProps) {
                 aria-label="Close chat"
               >
                 <X className="h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
-            <div className="flex-1 h-[calc(90vh-80px)] overflow-hidden">
+            <div className="flex-1 h-[300px]">
               <RealtimeChat
                 username={user?.username ?? ""}
                 onMessage={() => {
