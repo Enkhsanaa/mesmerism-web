@@ -1,0 +1,27 @@
+import { and, eq, isNull } from "drizzle-orm";
+import { createClient } from "../supabase/server";
+import { db } from "./drizzle";
+import { users } from "./migrations/schema";
+
+export async function getUser() {
+  const supabase = await createClient();
+  const {
+    data: { user: supabaseUser },
+  } = await supabase.auth.getUser();
+
+  if (!supabaseUser) {
+    return null;
+  }
+
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, supabaseUser.id))
+    .limit(1);
+
+  if (user.length === 0) {
+    return null;
+  }
+
+  return user[0];
+}

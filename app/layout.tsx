@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
-import { Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
+import type { Metadata, Viewport } from "next";
+import { Geist_Mono, Manrope } from "next/font/google";
+import { getUser } from "@/lib/db/queries";
+import { SWRConfig } from "swr";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -11,6 +13,10 @@ const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
 });
+
+export const viewport: Viewport = {
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Mesmerism",
@@ -25,23 +31,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link
-          rel="icon"
-          type="image/png"
-          href="/favicon-96x96.png"
-          sizes="96x96"
-        />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
-        />
         <meta name="apple-mobile-web-app-title" content="Mesmerism" />
       </head>
       <body className={`${manrope.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <SWRConfig
+          value={{
+            fallback: {
+              // We do NOT await here
+              // Only components that read this data will suspend
+              "/api/user": getUser(),
+            },
+          }}
+        >
+          {children}
+        </SWRConfig>
       </body>
     </html>
   );
