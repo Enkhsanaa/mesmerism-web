@@ -117,11 +117,11 @@ export default function VoteModal({
           {/* Coin info */}
           <div className="flex flex-row items-center justify-between w-full bg-[#34373C] rounded-[24px] p-[24px]">
             <div className="flex flex-row items-start justify-start gap-[16px] flex-wrap">
-              <p className="text-white font-semibold text-[14px]">
-                Боломжтой:
-              </p>
+              <p className="text-white font-semibold text-[14px]">Боломжтой:</p>
               <div className="flex items-center gap-[4px]">
-                <span className="text-white font-semibold text-[14px]">{availableCoins}</span>
+                <span className="text-white font-semibold text-[14px]">
+                  {availableCoins}
+                </span>
                 <CoinIcon className="size-6 text-[#FAD02C]" />
               </div>
             </div>
@@ -132,10 +132,11 @@ export default function VoteModal({
           </div>
         </CardContent>
         <CardFooter className="flex flex-row items-center justify-between gap-2">
-          <Button className="bg-transparent text-white w-[89px]">
-            Болих
-          </Button>
-          <Button disabled={selectedCoins <= 0 || selectedCoins > availableCoins} className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]">
+          <Button className="bg-transparent text-white w-[89px]">Болих</Button>
+          <Button
+            disabled={selectedCoins <= 0 || selectedCoins > availableCoins}
+            className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
+          >
             Санал өгөх
           </Button>
         </CardFooter>

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 export type UIMessage = {
   id: string;
   content: string | null;
-  user: { name: string };
+  user: { name: string; role?: string; avatar?: string; color?: string };
   createdAt: string;
 };
 
@@ -33,11 +33,35 @@ function toUIMessage(db: {
   message: string | null;
   authorUsername: string | null;
   createdAt: string;
+  message_source?: string;
+  author_avatar_url?: string | null;
+  author_color?: string | null;
 }): UIMessage {
+  // Map message_source to role
+  const getRole = (source?: string) => {
+    switch (source) {
+      case "admin":
+        return "Admin";
+      case "moderator":
+        return "Mod";
+      case "creator":
+        return "Creator";
+      case "system":
+        return "System";
+      default:
+        return undefined;
+    }
+  };
+
   return {
     id: db.id,
     content: db.message,
-    user: { name: db.authorUsername ?? "SYSTEM" },
+    user: {
+      name: db.authorUsername ?? "SYSTEM",
+      role: getRole(db.message_source),
+      avatar: db.author_avatar_url || undefined,
+      color: db.author_color || undefined,
+    },
     createdAt: db.createdAt,
   };
 }
@@ -72,6 +96,9 @@ export const RealtimeChat = ({
           message: m.message,
           authorUsername: m.authorUsername,
           createdAt: m.createdAt,
+          message_source: m.messageSource,
+          author_avatar_url: m.authorAvatarUrl,
+          author_color: m.authorColor,
         })
       ),
     [dbMessages]
@@ -106,11 +133,20 @@ export const RealtimeChat = ({
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-background text-foreground antialiased">
+    <div className="flex flex-col h-full w-full bg-card-background rounded-[24px] text-foreground antialiased">
       {/* Header / Older loader (optional) */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-2">
+      <div className="flex items-center justify-between px-4 py-2">
         <div className="text-sm text-muted-foreground">
-          {isConnected ? "Live" : "Connecting…"}
+          {isConnected ? (
+            <div className="flex items-center gap-2">
+              <span className="text-red-500">Live</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date().toLocaleTimeString()}
+              </span>
+            </div>
+          ) : (
+            "Холбогдож байна…"
+          )}
         </div>
         {hasMore && (
           <Button
@@ -119,7 +155,7 @@ export const RealtimeChat = ({
             onClick={loadMore}
             disabled={isLoading}
           >
-            {isLoading ? "Loading…" : "Load older"}
+            {isLoading ? "Уншиж байна…" : "Өмнөх чатуудыг харах"}
           </Button>
         )}
       </div>
@@ -128,7 +164,7 @@ export const RealtimeChat = ({
       <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {allMessages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground">
-            No messages yet. Start the conversation!
+            Чат хоосон байна. Та эхлүүлэх үү?
           </div>
         ) : null}
         <div className="space-y-1">
