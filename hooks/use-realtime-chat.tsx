@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
 
 // ---------- Wire & UI types ----------
 
@@ -36,7 +39,18 @@ export type ChatMessage = {
   deletedAt: string | null;
   deletedBy: string | null;
 };
-
+type BroadcastPayload = {
+  event: string;
+  payload: {
+    id: string; // unique event id
+    old_record: MessageWire | null;
+    operation: string; // INSERT, UPDATE, DELETE
+    record: MessageWire;
+    schema: string; // public
+    table: string; // messages
+  };
+  type: string;
+};
 // column list for selects
 const MESSAGE_COLUMNS =
   "id,created_at,updated_at,message,author_user_id,author_username,author_avatar_url,author_color,message_source,deleted_at,deleted_by";
@@ -139,26 +153,44 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     };
   }, [supabase, pageSize, includeDeleted]);
 
+  // EXAMPLE:
+  // const gameId = 'id'
+  // await supabase.realtime.setAuth() // Needed for Realtime Authorization
+  // const changes = supabase
+  //   .channel(`topic:${gameId}`, {
+  //     config: { private: true },
+  //   })
+  //   .on('broadcast', { event: 'INSERT' }, (payload) => console.log(payload))
+  //   .on('broadcast', { event: 'UPDATE' }, (payload) => console.log(payload))
+  //   .on('broadcast', { event: 'DELETE' }, (payload) => console.log(payload))
+  //   .subscribe()
+
   // -------- Realtime subscription --------
   useEffect(() => {
-    const channel = supabase
-      .channel("realtime:messages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        (payload: RealtimePostgresChangesPayload<MessageWire>) => {
-          if (payload.eventType === "INSERT") {
-            applyUpsert(payload.new);
-          } else if (payload.eventType === "UPDATE") {
-            applyUpsert(payload.new);
-          }
-          // DELETE events won't occur (hard-deletes prevented)
-        }
-      )
-      .subscribe((status) => {
-        console.log("subscribe status", status);
-        if (status === "SUBSCRIBED") setIsConnected(true);
-      });
+    let channel: RealtimeChannel;
+    supabase.realtime.setAuth().then(() => {
+      channel = supabase
+        .channel("topic:messages", {
+          config: {
+            private: true,
+          },
+        })
+        .on("broadcast", { event: "INSERT" }, (payload: BroadcastPayload) => {
+          console.log("INSERT", payload);
+          applyUpsert(payload.payload.record as MessageWire);
+        })
+        .on("broadcast", { event: "UPDATE" }, (payload: BroadcastPayload) => {
+          console.log("UPDATE", payload);
+          applyUpsert(payload.payload.record as MessageWire);
+        })
+        .on("broadcast", { event: "DELETE" }, (payload: BroadcastPayload) => {
+          console.log("DELETE", payload);
+        })
+        .subscribe((status) => {
+          console.log("subscribe status", status);
+          if (status === "SUBSCRIBED") setIsConnected(true);
+        });
+    });
 
     return () => {
       setIsConnected(false);
