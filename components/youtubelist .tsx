@@ -14,10 +14,10 @@ export default function Youtubelist() {
   return (
     <>
       <div
-        className="flex flex-col justify-center py-4 w-[750px] h-[140px] rounded-3xl mt-5"
+        className="flex flex-col justify-center py-4 w-full h-[140px] rounded-3xl mt-5 px-6"
         style={{ backgroundColor: "#292B2F" }}
       >
-        <div className="mx-auto relative flex items-center bg-dark-background w-[686px] h-[100px] rounded-3xl px-6">
+        <div className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6">
           {/* Left: Rank */}
           <span className="text-white text-base mr-4">1</span>
           {/* Avatar with badge */}

@@ -4,7 +4,7 @@ export default function Banner() {
       <img
         src="/banner.png"
         alt="banner"
-        className="w-[1312px] h-[201px] object-cover"
+        className="w-full h-[201px] object-cover"
       />
     </div>
   );

@@ -18,24 +18,24 @@ export default function Prize() {
 
   return (
     <div
-      className="flex justify-center py-4 w-full h-[368px] rounded-3xl"
+      className="flex justify-center py-4 w-full rounded-3xl"
       style={{ backgroundColor: "#292B2F" }}
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <h1
-            className={`${pressStart2P.className} text-2xl font-bold text-center mt-4`}
+            className={`${pressStart2P.className} text-xl md:text-2xl font-bold text-center mt-4`}
             style={{ color: "#B3CDA8" }}
           >
             CASH PRIZE
           </h1>
           <h2
-            className={`${pressStart2P.className} text-5xl font-bold text-center mt-6`}
+            className={`${pressStart2P.className} text-3xl md:text-5xl font-bold text-center mt-6`}
             style={{ color: "#B3CDA8" }}
           >
             15,000,000
           </h2>
-          <div className="flex flex-row justify-center gap-x-4 mt-8">
+          <div className="flex flex-row flex-wrap justify-center gap-4 mt-8">
             {weeks.map((week) => (
               <div key={week} className="flex flex-col items-center">
                 <Button

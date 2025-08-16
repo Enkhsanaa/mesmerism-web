@@ -7,12 +7,12 @@ export default async function Home() {
   return (
     <>
       <Banner />
-      <div className="flex w-full gap-5">
+      <div className="md:flex flex-wrap w-full gap-5">
         <div className="flex-1">
           <Prize />
           <YoutubeList />
         </div>
-        <div className="max-h-[592px] flex-1 max-w-[530px]">
+        <div className="flex-1 max-w-[530px]">
           <Livechat />
         </div>
       </div>

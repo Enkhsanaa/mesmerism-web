@@ -161,7 +161,10 @@ export const RealtimeChat = ({
       </div>
 
       {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto max-h-full lg:max-h-[70vh] p-4 space-y-4"
+      >
         {allMessages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground">
             Чат хоосон байна. Та эхлүүлэх үү?
