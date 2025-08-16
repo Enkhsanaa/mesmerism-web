@@ -119,14 +119,15 @@ async function main() {
   const POSTGRES_URL = await getPostgresURL();
   const BASE_URL = "http://localhost:3000";
   const NEXT_PUBLIC_SUPABASE_URL = await getSupabaseURL();
-  const NEXT_PUBLIC_SUPABASE_ANON_KEY = await getSupabaseAnonKey();
+  const NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY =
+    await getSupabaseAnonKey();
   const AUTH_SECRET = generateAuthSecret();
 
   await writeEnvFile({
     BASE_URL,
     POSTGRES_URL,
     NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY,
     AUTH_SECRET,
   });
 
