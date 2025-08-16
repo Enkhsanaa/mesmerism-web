@@ -580,7 +580,7 @@ export const weekParticipants = pgTable(
 );
 export const userCoinBalances = pgView("user_coin_balances", {
   userId: uuid("user_id"),
-  balance: numeric(),
+  balance: numeric({ mode: "number" }),
 }).as(
   sql`SELECT u.id AS user_id, COALESCE(sum(l.delta), 0::numeric) AS balance FROM users u LEFT JOIN coin_ledger l ON l.user_id = u.id GROUP BY u.id`
 );

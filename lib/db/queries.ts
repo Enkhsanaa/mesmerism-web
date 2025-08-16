@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { createClient } from "../supabase/server";
 import { db } from "./drizzle";
-import { users } from "./migrations/schema";
+import { userCoinBalances, users } from "./migrations/schema";
 
 export async function getUser() {
   const supabase = await createClient();
@@ -24,4 +24,17 @@ export async function getUser() {
   }
 
   return user[0];
+}
+
+export async function getUserBalance(userId: string) {
+  const userCoinBalance = await db
+    .select()
+    .from(userCoinBalances)
+    .where(eq(userCoinBalances.userId, userId));
+
+  if (userCoinBalance.length === 0) {
+    return 0;
+  }
+
+  return userCoinBalance[0].balance ?? 0;
 }
