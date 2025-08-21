@@ -39,7 +39,7 @@ export default function Login() {
             <p className="text-[28px] font-semibold text-[#DCDDDE] p-0 m-0">
               Тавтай морил
             </p>
-            <p className="text-[14px] text-[#DCDDDE] p-0 m-0">
+            <p className="text-sm text-[#DCDDDE] p-0 m-0">
               Та өөрийн бүртгэлтэй и-мэйл хаяг болон нууц үгээ оруулна уу.
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function Login() {
               </div>
               <a
                 href="#"
-                className="text-[14px] text-[#DCDDDE] hover:text-gray-300 font-semibold"
+                className="text-sm text-[#DCDDDE] hover:text-gray-300 font-semibold"
               >
                 Нууц үг мартсан ?
               </a>
@@ -124,7 +124,7 @@ export default function Login() {
           <Button
             type="submit"
             disabled={pending}
-            className="w-full bg-button-yellow hover:bg-yellow-600 text-[#292B2F] font-semibold h-12 rounded-lg text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-button-yellow hover:bg-yellow-600 text-[#292B2F] font-semibold h-12 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {pending ? (
               <>
@@ -140,7 +140,7 @@ export default function Login() {
           <Button
             type="button"
             onClick={() => router.push("/auth/register")}
-            className="w-full bg-card-background hover:bg-background text-[#DCDDDE] font-semibold h-12 rounded-lg text-[14px] shadow-none"
+            className="w-full bg-card-background hover:bg-background text-[#DCDDDE] font-semibold h-12 rounded-lg text-sm shadow-none"
           >
             Бүртгүүлэх
           </Button>

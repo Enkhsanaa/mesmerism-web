@@ -54,7 +54,7 @@ export default function Register() {
             <p className="text-[28px] font-semibold text-[#DCDDDE] p-0 m-0">
               Бүртгүүлэх
             </p>
-            <p className="text-[14px] text-[#DCDDDE] p-0 m-0">
+            <p className="text-sm text-[#DCDDDE] p-0 m-0">
               Та өөрийн нэвтрэх нэр болон нууц үгээ үүсгэнэ үү.
             </p>
           </div>
@@ -146,20 +146,14 @@ export default function Register() {
 
           {/* Terms and Conditions */}
           <div className="flex flex-col items-start justify-start gap-[8px] w-full">
-            <p className="text-[14px] text-[#DCDDDE] p-0 m-0 font-semibold">
+            <p className="text-sm text-[#DCDDDE] p-0 m-0 font-semibold">
               Доорх "Би зөвшөөрч байна." товчийг дарснаар би
-              <a
-                href="#"
-                className="text-[14px] text-[#FAD02C] p-0 m-0 underline"
-              >
+              <a href="#" className="text-sm text-[#FAD02C] p-0 m-0 underline">
                 {" "}
                 Үйлчилгээний нөхцөл{" "}
               </a>
               - ийг уншиж танилцан зөвшөөрч, мөн
-              <a
-                href="#"
-                className="text-[14px] text-[#FAD02C] p-0 m-0 underline"
-              >
+              <a href="#" className="text-sm text-[#FAD02C] p-0 m-0 underline">
                 {" "}
                 Нууцлалын бодлого{" "}
               </a>
@@ -177,7 +171,7 @@ export default function Register() {
                 />
                 <label
                   htmlFor="agree"
-                  className="text-[14px] text-[#DCDDDE] cursor-pointer font-semibold "
+                  className="text-sm text-[#DCDDDE] cursor-pointer font-semibold "
                 >
                   Би зөвшөөрч байна
                 </label>
@@ -189,7 +183,7 @@ export default function Register() {
           <Button
             type="submit"
             disabled={pending || !agree}
-            className="w-full bg-button-yellow hover:bg-yellow-600 text-[#292B2F] font-semibold h-12 rounded-lg text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-button-yellow hover:bg-yellow-600 text-[#292B2F] font-semibold h-12 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {pending ? (
               <>
@@ -205,7 +199,7 @@ export default function Register() {
           <Button
             type="button"
             onClick={() => router.push("/auth/login")}
-            className="w-full bg-card-background hover:bg-background text-[#DCDDDE] font-semibold h-12 rounded-lg text-[14px] shadow-none"
+            className="w-full bg-card-background hover:bg-background text-[#DCDDDE] font-semibold h-12 rounded-lg text-sm shadow-none"
           >
             Нэвтрэх
           </Button>

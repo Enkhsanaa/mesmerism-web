@@ -55,12 +55,7 @@ export default function Youtubelist() {
       </div>
 
       {/* Vote Modal */}
-      <VoteModal
-        availableCoins={500}
-        isOpen={openVoteModal}
-        onClose={handleCloseVoteModal}
-        username="Markiplier"
-      />
+      <VoteModal isOpen={openVoteModal} onClose={handleCloseVoteModal} />
     </>
   );
 }
