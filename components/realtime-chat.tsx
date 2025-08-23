@@ -3,11 +3,12 @@
 import { cn } from "@/lib/utils";
 import { ChatMessageItem } from "@/components/chat-message";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
-import { useRealtimeChat } from "@/hooks/use-realtime-chat"; // ⬅️ new hook API (no roomName/username args)
+import { ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat"; // ⬅️ new hook API (no roomName/username args)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 
 /**
  * Legacy UI message shape expected by <ChatMessageItem />
@@ -16,27 +17,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 export type UIMessage = {
   id: string;
   content: string | null;
-  user: { name: string; role?: string; avatar?: string; color?: string };
+  user: {
+    id: string;
+    name: string;
+    role?: string;
+    avatar?: string;
+    color?: string;
+  };
   createdAt: string;
 };
 
 interface RealtimeChatProps {
   // roomName removed (schema is global messages). If you plan to add rooms later, reintroduce it.
-  username: string; // for "own message" highlighting only
   onMessage?: (messages: UIMessage[]) => void;
   messages?: UIMessage[]; // optionally preseed UI with external messages
 }
 
 /** Normalize DB ChatMessage → UIMessage the item component expects */
-function toUIMessage(db: {
-  id: string;
-  message: string | null;
-  authorUsername: string | null;
-  createdAt: string;
-  message_source?: string;
-  author_avatar_url?: string | null;
-  author_color?: string | null;
-}): UIMessage {
+function toUIMessage(db: ChatMessage): UIMessage {
   // Map message_source to role
   const getRole = (source?: string) => {
     switch (source) {
@@ -57,23 +55,22 @@ function toUIMessage(db: {
     id: db.id,
     content: db.message,
     user: {
-      name: db.authorUsername ?? "SYSTEM",
+      id: db.author_user_id ?? "SYSTEM",
+      name: db.author_username ?? "SYSTEM",
       role: getRole(db.message_source),
       avatar: db.author_avatar_url || undefined,
       color: db.author_color || undefined,
     },
-    createdAt: db.createdAt,
+    createdAt: db.created_at,
   };
 }
 
 export const RealtimeChat = ({
-  username,
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
   const { containerRef, scrollToBottom } = useChatScroll();
-
-  // new hook — persistent + realtime
+  const { user } = useRealtime();
   const {
     messages: dbMessages, // ChatMessage[] from the new hook (camelCase)
     sendMessage, // (content: string) => Promise<void>
@@ -81,26 +78,15 @@ export const RealtimeChat = ({
     isLoading,
     hasMore,
     loadMore,
-    // deleteMessage,       // available if you want to surface moderation
+    // deleteMessage, // available if you want to surface moderation
     // postSystemMessage,   // available for mods/admins
-  } = useRealtimeChat({ pageSize: 50 });
+  } = useRealtimeChat({ pageSize: 5 });
 
   const [newMessage, setNewMessage] = useState("");
 
   // Map DB messages to UIMessage so <ChatMessageItem /> keeps working
   const realtimeUIMessages = useMemo<UIMessage[]>(
-    () =>
-      dbMessages.map((m) =>
-        toUIMessage({
-          id: m.id,
-          message: m.message,
-          authorUsername: m.authorUsername,
-          createdAt: m.createdAt,
-          message_source: m.messageSource,
-          author_avatar_url: m.authorAvatarUrl,
-          author_color: m.authorColor,
-        })
-      ),
+    () => dbMessages.map((m) => toUIMessage(m)),
     [dbMessages]
   );
 
@@ -133,7 +119,7 @@ export const RealtimeChat = ({
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-card-background rounded-[24px] text-foreground antialiased">
+    <div className="flex flex-col max-h-full bg-card-background rounded-[24px] text-foreground">
       {/* Header / Older loader (optional) */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="text-sm text-muted-foreground">
@@ -155,7 +141,7 @@ export const RealtimeChat = ({
             onClick={loadMore}
             disabled={isLoading}
           >
-            {isLoading ? "Уншиж байна…" : "Өмнөх чатуудыг харах"}
+            {isLoading ? "Уншиж байна…" : "Өмнөх чат мэссэжүүдийг унших"}
           </Button>
         )}
       </div>
@@ -163,7 +149,7 @@ export const RealtimeChat = ({
       {/* Messages */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto max-h-full lg:max-h-[50vh] p-4 space-y-4"
+        className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4"
       >
         {allMessages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground">
@@ -182,8 +168,8 @@ export const RealtimeChat = ({
                 className="animate-in fade-in slide-in-from-bottom-4 duration-300"
               >
                 <ChatMessageItem
+                  isOwnMessage={message.user.id === user?.id}
                   message={message}
-                  isOwnMessage={message.user.name === username}
                   showHeader={showHeader}
                 />
               </div>

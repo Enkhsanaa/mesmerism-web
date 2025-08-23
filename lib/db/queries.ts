@@ -26,11 +26,19 @@ export async function getUser() {
   return user[0];
 }
 
-export async function getUserBalance(userId: string) {
+export async function getUserBalance() {
+  const supabase = await createClient();
+  const {
+    data: { user: supabaseUser },
+  } = await supabase.auth.getUser();
+
+  if (!supabaseUser) {
+    return null;
+  }
   const userCoinBalance = await db
     .select()
     .from(userCoinBalances)
-    .where(eq(userCoinBalances.userId, userId));
+    .where(eq(userCoinBalances.userId, supabaseUser.id));
 
   if (userCoinBalance.length === 0) {
     return 0;

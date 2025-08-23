@@ -89,6 +89,7 @@ export async function signup(
       },
     },
   });
+  console.log(error);
 
   if (error) {
     // Provide user-friendly error messages for common cases

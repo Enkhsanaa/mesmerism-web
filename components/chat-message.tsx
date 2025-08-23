@@ -16,7 +16,6 @@ export const ChatMessageItem = ({
   isOwnMessage,
   showHeader,
 }: ChatMessageItemProps) => {
-  // Get role icon and color
   const getRoleInfo = (role?: string) => {
     switch (role) {
       case "Admin":
@@ -58,12 +57,8 @@ export const ChatMessageItem = ({
     return name.slice(0, 2).toUpperCase();
   };
 
-  // Get username color based on role, custom color, or generate from name
-  const getUsernameColor = (
-    name: string,
-    role?: string,
-    customColor?: string
-  ) => {
+  // Get username color based on role or generate from name
+  const getUsernameColor = (name: string, role?: string) => {
     // Use role-based colors if no custom color
     if (role === "Admin") return "text-yellow-400";
     if (role === "Creator") return "text-purple-400";

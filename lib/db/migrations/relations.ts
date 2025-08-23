@@ -1,14 +1,19 @@
 import { relations } from "drizzle-orm/relations";
-import { users, userRoles, coinTopups, coinLedger, voteOrders, weekParticipants, competitionWeeks, messages, profiles, userSuspensions } from "./schema";
+import { users, profileComments, profiles, userRoles, coinTopups, coinLedger, voteOrders, weekParticipants, competitionWeeks, chatMessages, userSuspensions } from "./schema";
 
-export const userRolesRelations = relations(userRoles, ({one}) => ({
+export const profileCommentsRelations = relations(profileComments, ({one}) => ({
 	user: one(users, {
-		fields: [userRoles.userId],
+		fields: [profileComments.authorUserId],
 		references: [users.id]
+	}),
+	profile: one(profiles, {
+		fields: [profileComments.profileId],
+		references: [profiles.userId]
 	}),
 }));
 
 export const usersRelations = relations(users, ({many}) => ({
+	profileComments: many(profileComments),
 	userRoles: many(userRoles),
 	coinTopups: many(coinTopups),
 	coinLedgers: many(coinLedger),
@@ -18,11 +23,11 @@ export const usersRelations = relations(users, ({many}) => ({
 	voteOrders_creatorUserId: many(voteOrders, {
 		relationName: "voteOrders_creatorUserId_users_id"
 	}),
-	messages_authorUserId: many(messages, {
-		relationName: "messages_authorUserId_users_id"
+	chatMessages_authorUserId: many(chatMessages, {
+		relationName: "chatMessages_authorUserId_users_id"
 	}),
-	messages_deletedBy: many(messages, {
-		relationName: "messages_deletedBy_users_id"
+	chatMessages_deletedBy: many(chatMessages, {
+		relationName: "chatMessages_deletedBy_users_id"
 	}),
 	profiles: many(profiles),
 	userSuspensions_createdBy: many(userSuspensions, {
@@ -32,6 +37,21 @@ export const usersRelations = relations(users, ({many}) => ({
 		relationName: "userSuspensions_targetUserId_users_id"
 	}),
 	weekParticipants: many(weekParticipants),
+}));
+
+export const profilesRelations = relations(profiles, ({one, many}) => ({
+	profileComments: many(profileComments),
+	user: one(users, {
+		fields: [profiles.userId],
+		references: [users.id]
+	}),
+}));
+
+export const userRolesRelations = relations(userRoles, ({one}) => ({
+	user: one(users, {
+		fields: [userRoles.userId],
+		references: [users.id]
+	}),
 }));
 
 export const coinTopupsRelations = relations(coinTopups, ({one}) => ({
@@ -91,23 +111,16 @@ export const competitionWeeksRelations = relations(competitionWeeks, ({many}) =>
 	weekParticipants: many(weekParticipants),
 }));
 
-export const messagesRelations = relations(messages, ({one}) => ({
+export const chatMessagesRelations = relations(chatMessages, ({one}) => ({
 	user_authorUserId: one(users, {
-		fields: [messages.authorUserId],
+		fields: [chatMessages.authorUserId],
 		references: [users.id],
-		relationName: "messages_authorUserId_users_id"
+		relationName: "chatMessages_authorUserId_users_id"
 	}),
 	user_deletedBy: one(users, {
-		fields: [messages.deletedBy],
+		fields: [chatMessages.deletedBy],
 		references: [users.id],
-		relationName: "messages_deletedBy_users_id"
-	}),
-}));
-
-export const profilesRelations = relations(profiles, ({one}) => ({
-	user: one(users, {
-		fields: [profiles.userId],
-		references: [users.id]
+		relationName: "chatMessages_deletedBy_users_id"
 	}),
 }));
 

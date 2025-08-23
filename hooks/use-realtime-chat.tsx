@@ -2,17 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type {
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-} from "@supabase/supabase-js";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 
 // ---------- Wire & UI types ----------
 
 // What Supabase/PostgREST actually sends back (snake_case, bigint/uuid as strings)
-type MessageWire = {
-  [key: string]: unknown; // 👈 satisfies supabase generic constraint
-  id: string | number;
+export interface PostgresPayload {
+  schema: string;
+  table: string;
+  commit_timestamp: string;
+  eventType: string;
+  new: ChatMessage;
+  old: ChatMessage | null;
+  errors: any;
+}
+// What we keep in React state (camelCase, id as string)
+export type ChatMessage = {
+  id: string;
   created_at: string;
   updated_at: string;
   message: string | null;
@@ -25,52 +31,9 @@ type MessageWire = {
   deleted_by: string | null;
 };
 
-// What we keep in React state (camelCase, id as string)
-export type ChatMessage = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  message: string | null;
-  authorUserId: string | null;
-  authorUsername: string | null;
-  authorAvatarUrl: string | null;
-  authorColor: string | null;
-  messageSource: MessageWire["message_source"];
-  deletedAt: string | null;
-  deletedBy: string | null;
-};
-type BroadcastPayload = {
-  event: string;
-  payload: {
-    id: string; // unique event id
-    old_record: MessageWire | null;
-    operation: string; // INSERT, UPDATE, DELETE
-    record: MessageWire;
-    schema: string; // public
-    table: string; // messages
-  };
-  type: string;
-};
 // column list for selects
 const MESSAGE_COLUMNS =
   "id,created_at,updated_at,message,author_user_id,author_username,author_avatar_url,author_color,message_source,deleted_at,deleted_by";
-
-// normalize row -> UI shape
-function fromWire(r: MessageWire): ChatMessage {
-  return {
-    id: String(r.id),
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    message: r.message,
-    authorUserId: r.author_user_id,
-    authorUsername: r.author_username,
-    authorAvatarUrl: r.author_avatar_url,
-    authorColor: r.author_color,
-    messageSource: r.message_source,
-    deletedAt: r.deleted_at,
-    deletedBy: r.deleted_by,
-  };
-}
 
 interface UseRealtimeChatOptions {
   pageSize?: number;
@@ -81,9 +44,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
   const { pageSize = 30, includeDeleted = false } = options;
 
   const supabase = useMemo(() => createClient(), []);
+  const { subscribe, unsubscribe, isConnected } = useRealtime();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   // for pagination (older-than)
@@ -91,26 +54,38 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
 
   // keep list sorted asc by createdAt
   const sortAsc = (arr: ChatMessage[]) =>
-    arr.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    arr.slice().sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   // upsert a single row into state
   const applyUpsert = useCallback(
-    (row: MessageWire) => {
-      const mapped = fromWire(row);
+    (row: ChatMessage) => {
       setMessages((curr) => {
         // if not showing deleted, drop it
-        if (!includeDeleted && mapped.deletedAt) {
-          const idx = curr.findIndex((m) => m.id === mapped.id);
+        if (!includeDeleted && row.deleted_at) {
+          const idx = curr.findIndex((m) => m.id === row.id);
           if (idx === -1) return curr;
           const next = curr.slice();
           next.splice(idx, 1);
           return next;
         }
-        const idx = curr.findIndex((m) => m.id === mapped.id);
-        if (idx === -1) return sortAsc([...curr, mapped]);
+        const idx = curr.findIndex((m) => m.id === row.id);
+        if (idx === -1) return sortAsc([...curr, row]);
         const next = curr.slice();
-        next[idx] = mapped;
+        next[idx] = row;
         return sortAsc(next);
+      });
+    },
+    [includeDeleted]
+  );
+
+  const applyDelete = useCallback(
+    (row: ChatMessage) => {
+      setMessages((curr) => {
+        const idx = curr.findIndex((m) => m.id === row.id);
+        if (idx === -1) return curr;
+        const next = curr.slice();
+        next.splice(idx, 1);
+        return next;
       });
     },
     [includeDeleted]
@@ -123,7 +98,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
       setIsLoading(true);
 
       let q = supabase
-        .from("messages")
+        .from("chat_messages")
         .select(MESSAGE_COLUMNS)
         .order("created_at", { ascending: false })
         .limit(pageSize);
@@ -142,9 +117,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         return;
       }
 
-      const rows = (data ?? []).slice().reverse().map(fromWire); // UI asc
+      const rows = (data ?? []).slice().reverse() as ChatMessage[];
       setMessages(rows);
-      oldestTsRef.current = rows.length ? rows[0].createdAt : null;
+      oldestTsRef.current = rows.length ? rows[0].created_at : null;
       setHasMore((data ?? []).length === pageSize);
       setIsLoading(false);
     })();
@@ -153,54 +128,27 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     };
   }, [supabase, pageSize, includeDeleted]);
 
-  // EXAMPLE:
-  // const gameId = 'id'
-  // await supabase.realtime.setAuth() // Needed for Realtime Authorization
-  // const changes = supabase
-  //   .channel(`topic:${gameId}`, {
-  //     config: { private: true },
-  //   })
-  //   .on('broadcast', { event: 'INSERT' }, (payload) => console.log(payload))
-  //   .on('broadcast', { event: 'UPDATE' }, (payload) => console.log(payload))
-  //   .on('broadcast', { event: 'DELETE' }, (payload) => console.log(payload))
-  //   .subscribe()
-
-  // -------- Realtime subscription --------
+  // -------- Realtime subscription to CHAT_MESSAGE events --------
   useEffect(() => {
-    let channel: RealtimeChannel;
-    supabase.realtime.setAuth().then(() => {
-      channel = supabase
-        .channel("topic:messages", {
-          config: {
-            private: true,
-          },
-        })
-        .on("broadcast", { event: "INSERT" }, (payload: BroadcastPayload) => {
-          console.log("INSERT", payload);
-          applyUpsert(payload.payload.record as MessageWire);
-        })
-        .on("broadcast", { event: "UPDATE" }, (payload: BroadcastPayload) => {
-          console.log("UPDATE", payload);
-          applyUpsert(payload.payload.record as MessageWire);
-        })
-        .on("broadcast", { event: "DELETE" }, (payload: BroadcastPayload) => {
-          console.log("DELETE", payload);
-        })
-        .subscribe((status) => {
-          console.log("subscribe status", status);
-          if (status === "SUBSCRIBED") setIsConnected(true);
-        });
-      console.log("setting channel", channel);
-    });
-
-    return () => {
-      setIsConnected(false);
-      console.log("removing channel", channel);
-      if (channel) {
-        supabase.removeChannel(channel);
+    const handleChatMessage = (payload: PostgresPayload) => {
+      console.log("Chat message received via realtime:", payload);
+      // Handle different types of chat message events
+      if (payload.eventType === "INSERT" && payload.new) {
+        applyUpsert(payload.new);
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        applyUpsert(payload.new);
+      } else if (payload.eventType === "DELETE") {
+        applyDelete(payload.new);
       }
     };
-  }, [supabase, applyUpsert]);
+
+    // Subscribe to CHAT_MESSAGE events
+    const unsubscribeChat = subscribe("CHAT_MESSAGE", handleChatMessage);
+
+    return () => {
+      unsubscribeChat();
+    };
+  }, [subscribe, unsubscribe, applyUpsert, applyDelete]);
 
   // -------- Pagination --------
   const loadMore = useCallback(async () => {
@@ -208,7 +156,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     setIsLoading(true);
 
     let q = supabase
-      .from("messages")
+      .from("chat_messages")
       .select(MESSAGE_COLUMNS)
       .order("created_at", { ascending: false })
       .limit(pageSize);
@@ -222,10 +170,10 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
       setIsLoading(false);
       return;
     }
-    const batch = (data ?? []).slice().reverse().map(fromWire); // UI asc
+    const batch = (data ?? []).slice().reverse() as ChatMessage[];
     setMessages((curr) => sortAsc([...batch, ...curr]));
     if (batch.length) {
-      oldestTsRef.current = batch[0].createdAt;
+      oldestTsRef.current = batch[0].created_at;
     }
     setHasMore((data ?? []).length === pageSize);
     setIsLoading(false);
@@ -244,7 +192,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
       }
 
       // RLS: author_user_id must equal auth.uid()
-      const { error } = await supabase.from("messages").insert({
+      const { error } = await supabase.from("chat_messages").insert({
         message: text,
         author_user_id: userRes.user.id,
       });

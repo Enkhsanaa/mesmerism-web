@@ -1,7 +1,7 @@
 "use client";
 
 import { RealtimeChat } from "@/components/realtime-chat";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -97,18 +97,38 @@ export function LivechatClient({ user }: LivechatClientProps) {
     setIsOpen(true);
   };
 
+  const chatComponent = useMemo(
+    () => (
+      <RealtimeChat
+        messages={[
+          {
+            content: "Тавтай морилно уу",
+            user: {
+              id: "SYSTEM",
+              name: "SYSTEM",
+              role: "system",
+              avatar: "https://github.com/shadcn.png",
+              color: "red",
+            },
+            createdAt: "2021-01-01T00:00:00Z",
+            id: "WELCOME_MESSAGE",
+          },
+        ]}
+        onMessage={() => {
+          if (!isOpen) {
+            setHasUnreadMessages(true);
+          }
+        }}
+      />
+    ),
+    []
+  );
+
   return (
     <>
       {/* Desktop: Show full chat */}
-      <div className="hidden md:block w-full h-full">
-        <RealtimeChat
-          username={user?.username ?? ""}
-          onMessage={() => {
-            if (!isOpen) {
-              setHasUnreadMessages(true);
-            }
-          }}
-        />
+      <div className="hidden md:block w-full h-full max-h-[760px]">
+        {chatComponent}
       </div>
 
       {/* Mobile: Show floating action button */}
@@ -134,7 +154,7 @@ export function LivechatClient({ user }: LivechatClientProps) {
           </DialogTrigger>
           <DialogContent
             ref={dialogRef}
-            className="fixed inset-x-0 bottom-0 w-full max-w-none p-0 border-0 rounded-t-3xl sm:rounded-3xl translate-y-0 translate-x-0 left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4"
+            className="fixed flex flex-col inset-x-0 bottom-0 top-10 w-full max-w-none sm:max-w-none p-0 border-0 rounded-t-3xl sm:rounded-3xl translate-y-0 translate-x-0 left-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4"
           >
             <DialogTitle className="sr-only">Live Chat</DialogTitle>
             {/* Swipe indicator */}
@@ -142,26 +162,8 @@ export function LivechatClient({ user }: LivechatClientProps) {
 
             <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <h2 className="text-lg font-semibold">Live Chat</h2>
-              {/* <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="h-8 w-8 rounded-full"
-                aria-label="Close chat"
-              >
-                <X className="h-4 w-4" />
-              </Button> */}
             </div>
-            <div className="flex-1 h-[300px]">
-              <RealtimeChat
-                username={user?.username ?? ""}
-                onMessage={() => {
-                  if (!isOpen) {
-                    setHasUnreadMessages(true);
-                  }
-                }}
-              />
-            </div>
+            <div className="flex-1 min-h-0">{chatComponent}</div>
           </DialogContent>
         </Dialog>
       </div>

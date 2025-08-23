@@ -16,8 +16,6 @@ create type public.app_permission as enum (
 
 create type public.app_role as enum ('admin', 'moderator', 'creator');
 
-create type public.user_status as enum ('ONLINE', 'OFFLINE');
-
 create type public.topup_status as enum ('pending', 'confirmed', 'failed');
 
 create type public.coin_tx_reason as enum ('topup', 'vote_purchase', 'adjustment', 'refund');
@@ -29,24 +27,14 @@ create type public.message_source as enum ('user', 'creator', 'moderator', 'admi
 -- USERS
 -- -----------------------
 create table public.users (
-  id            uuid primary key, -- UUID (can be from auth.users or generated in-app)
-  email         text not null,
-  password_hash text not null,
+  id            uuid primary key,
   username      text not null,
-  status        public.user_status default 'OFFLINE'::public.user_status,
   avatar_url    text,
   color         text check (color ~* '^#([0-9a-f]{6})$') default '#888888',
   created_at    timestamptz not null default timezone('utc', now())
 );
-comment on table public.users is 'Profile data for each user.';
-comment on column public.users.password_hash is 'Hashed password (bcrypt, argon2, etc.).';
 comment on column public.users.id is 'References the internal Supabase Auth user.';
-
--- Case-insensitive usernames (Alice == alice)
 create unique index users_username_lower_uniq on public.users (lower(username));
-
--- Enforce unique emails (case-insensitive)
-create unique index users_email_lower_uniq on public.users (lower(email));
 
 -- -----------------------
 -- ROLES & PERMISSIONS
@@ -90,11 +78,12 @@ as $$
   end;
 $$;
 
--- Role-class for messages (admin > moderator > creator > user)
+-- Role-class for chat messages (admin > moderator > creator > user)
 create or replace function public.role_class_for_user(u uuid)
 returns public.message_source
 language sql
-stable
+security definer
+set search_path = ''
 as $$
   select case
     when exists (select 1 from public.user_roles r where r.user_id = u and r.role = 'admin') then 'admin'::public.message_source
@@ -135,6 +124,15 @@ create trigger trg_profiles_updated_at
 before update on public.profiles
 for each row execute procedure public.touch_profiles_updated_at();
 
+create table public.profile_comments (
+  id bigserial primary key,
+  profile_id uuid not null references public.profiles(user_id),
+  author_user_id uuid not null references public.users(id),
+  comment text not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+create index profile_comments_profile_id_idx on public.profile_comments (profile_id, created_at desc);
+
 -- -----------------------
 -- MODERATION (Timeouts/Bans)
 -- -----------------------
@@ -150,8 +148,9 @@ create table public.user_suspensions (
 
 create or replace function public.is_user_suspended(u uuid)
 returns boolean
-stable
 language sql
+security definer
+set search_path = ''
 as $$
   select exists (
     select 1
@@ -169,9 +168,9 @@ create index if not exists user_suspensions_target_perm_idx
   where expires_at is null;
 
 -- -----------------------
--- GLOBAL MESSAGES (no channels)
+-- GLOBAL CHAT MESSAGES
 -- -----------------------
-create table public.messages (
+create table public.chat_messages (
   id                 bigserial primary key,
   created_at         timestamptz not null default timezone('utc', now()),
   updated_at         timestamptz not null default timezone('utc', now()),
@@ -189,11 +188,13 @@ create table public.messages (
   deleted_by         uuid references public.users(id)
 );
 
-comment on table public.messages is 'Global chat messages. No channels. Includes author snapshot & soft delete.';
+comment on table public.chat_messages is 'Global chat messages. No channels. Includes author snapshot & soft delete.';
 
-create or replace function public.messages_before_insert()
+create or replace function public.chat_messages_before_insert()
 returns trigger
 language plpgsql
+security definer
+set search_path = ''
 as $$
 declare
   v_username text;
@@ -205,7 +206,7 @@ begin
     new.message_source := 'system';
     new.author_username := 'SYSTEM';
     new.author_avatar_url := coalesce(new.author_avatar_url, null);
-    new.author_color := coalesce(new.author_color, '#000000');
+    new.author_color := coalesce(new.author_color, '#FFFFFF');
   else
     select u.username, u.avatar_url, u.color
     into v_username, v_avatar, v_color
@@ -226,9 +227,11 @@ begin
 end;
 $$;
 
-create or replace function public.messages_before_update()
+create or replace function public.chat_messages_before_update()
 returns trigger
 language plpgsql
+security definer
+set search_path = ''
 as $$
 begin
   -- No changing author after creation
@@ -238,7 +241,7 @@ begin
 
   -- Disallow edits after soft deletion
   if old.deleted_at is not null then
-    raise exception 'Message already deleted';
+    raise exception 'Chat message already deleted';
   end if;
 
   new.updated_at := timezone('utc', now());
@@ -246,18 +249,18 @@ begin
 end;
 $$;
 
-drop trigger if exists trg_messages_bi on public.messages;
-create trigger trg_messages_bi
-before insert on public.messages
-for each row execute procedure public.messages_before_insert();
+drop trigger if exists trg_chat_messages_bi on public.chat_messages;
+create trigger trg_chat_messages_bi
+before insert on public.chat_messages
+for each row execute procedure public.chat_messages_before_insert();
 
-drop trigger if exists trg_messages_bu on public.messages;
-create trigger trg_messages_bu
-before update on public.messages
-for each row execute procedure public.messages_before_update();
+drop trigger if exists trg_chat_messages_bu on public.chat_messages;
+create trigger trg_chat_messages_bu
+before update on public.chat_messages
+for each row execute procedure public.chat_messages_before_update();
 
 -- Soft-delete RPC (owner or mod/admin)
-create or replace function public.mark_message_deleted(p_message_id bigint)
+create or replace function public.mark_chat_message_deleted(p_message_id bigint)
 returns void
 language plpgsql
 security definer
@@ -273,58 +276,33 @@ begin
   end if;
 
   select author_user_id, deleted_at into v_author, v_deleted_at
-  from public.messages
+  from public.chat_messages
   where id = p_message_id;
 
   if not found then
-    raise exception 'Message not found';
+    raise exception 'Chat message not found';
   end if;
 
   if v_deleted_at is not null then
-    raise exception 'Message already deleted';
+    raise exception 'Chat message already deleted';
   end if;
 
   if v_uid <> v_author and not public.authorize('users.moderate', v_uid) then
     raise exception 'Forbidden';
   end if;
 
-  update public.messages
+  update public.chat_messages
   set deleted_at = timezone('utc', now()),
       deleted_by = v_uid
   where id = p_message_id;
 end;
 $$;
 
--- Admin/mod-only system message RPC
-create or replace function public.post_system_message(p_message text)
-returns bigint
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_uid uuid := auth.uid();
-  v_id bigint;
-begin
-  if v_uid is null then
-    raise exception 'Not authenticated';
-  end if;
-  if not public.authorize('users.moderate', v_uid) then
-    raise exception 'Only moderators/admins can post system messages';
-  end if;
-
-  insert into public.messages (message, author_user_id) values (p_message, null)
-  returning id into v_id;
-
-  return v_id;
-end;
-$$;
-
--- Helpful message indexes
-create index if not exists messages_created_not_deleted_idx
-  on public.messages (created_at desc) where deleted_at is null;
-create index if not exists messages_author_idx
-  on public.messages (author_user_id, created_at desc);
+-- Helpful chat message indexes
+create index if not exists chat_messages_created_not_deleted_idx
+  on public.chat_messages (created_at desc) where deleted_at is null;
+create index if not exists chat_messages_author_idx
+  on public.chat_messages (author_user_id, created_at desc);
 
 -- -----------------------
 -- COINS: Top-ups & Ledger
@@ -344,6 +322,8 @@ create table public.coin_topups (
 create or replace function public.touch_topups_updated_at()
 returns trigger
 language plpgsql
+security definer
+set search_path = ''
 as $$
 begin
   new.updated_at := timezone('utc', now());
@@ -454,7 +434,7 @@ as $$
   );
 $$;
 
-insert into public.app_settings (key, int_value) values ('coins_per_vote', 1)
+insert into public.app_settings (key, int_value) values ('coins_per_vote', 500)
 on conflict (key) do nothing;
 
 create table public.vote_orders (
@@ -558,8 +538,53 @@ begin
 end;
 $$;
 
--- Leaderboard by percentage (hide raw counts)
-create or replace function public.get_week_leaderboard(p_week_id bigint)
+-- =============================================================================
+-- LEADERBOARDS (private totals + definer function + optional MV)
+-- =============================================================================
+
+-- 1) Pre-aggregated totals per (week, creator)
+create table public.week_vote_totals (
+  week_id          bigint not null,
+  creator_user_id  uuid   not null,
+  votes            bigint not null default 0,
+  primary key (week_id, creator_user_id)
+);
+
+create index week_vote_totals_week_idx
+  on public.week_vote_totals (week_id);
+
+create index week_participants_week_creator_idx3
+  on public.week_participants (week_id, creator_user_id);
+
+-- 2) Maintain totals on each vote order insert
+create or replace function public.bump_week_vote_totals()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.week_vote_totals (week_id, creator_user_id, votes)
+  values (new.week_id, new.creator_user_id, new.votes)
+  on conflict (week_id, creator_user_id)
+  do update set votes = public.week_vote_totals.votes + excluded.votes;
+  return null;
+end;
+$$;
+
+create trigger trg_vote_orders_bump
+after insert on public.vote_orders
+for each row execute procedure public.bump_week_vote_totals();
+
+-- 3) RLS: keep totals PRIVATE (no public read)
+alter table public.week_vote_totals enable row level security;
+
+-- Only admins/managers (votes.view_all) can read raw totals
+create policy "week_vote_totals.select.admins" on public.week_vote_totals
+  for select using (public.authorize('votes.view_all', auth.uid()));
+
+-- 4) Public-facing API: percentages + ranks (no raw counts)
+create or replace function public.get_week_leaderboard_public(p_week_id bigint)
 returns table (
   week_id bigint,
   creator_user_id uuid,
@@ -567,43 +592,103 @@ returns table (
   rank integer
 )
 language sql
+stable
 security definer
 set search_path = ''
 as $$
   with totals as (
-    select coalesce(sum(vo.votes),0)::numeric as total_votes
-    from public.vote_orders vo
-    where vo.week_id = p_week_id
+    select sum(votes)::numeric as total_votes
+    from public.week_vote_totals
+    where week_id = p_week_id
   ),
-  per_creator as (
+  per_participant as (
     select
       wp.week_id,
       wp.creator_user_id,
-      coalesce(sum(vo.votes),0)::numeric as votes
+      coalesce(wvt.votes, 0)::numeric as votes
     from public.week_participants wp
-    left join public.vote_orders vo
-      on vo.week_id = wp.week_id
-     and vo.creator_user_id = wp.creator_user_id
+    left join public.week_vote_totals wvt
+      on wvt.week_id = wp.week_id
+     and wvt.creator_user_id = wp.creator_user_id
     where wp.week_id = p_week_id
-    group by wp.week_id, wp.creator_user_id
-  ),
-  with_pct as (
-    select
-      pc.week_id,
-      pc.creator_user_id,
-      case when t.total_votes = 0 then 0
-           else round((pc.votes / nullif(t.total_votes,0)) * 100.0, 2)
-      end as percent,
-      pc.votes
-    from per_creator pc
-    cross join totals t
   )
   select
-    week_id,
-    creator_user_id,
-    percent,
-    rank() over (partition by week_id order by votes desc, creator_user_id asc) as rank
-  from with_pct
+    pp.week_id,
+    pp.creator_user_id,
+    case when t.total_votes = 0 then 0
+         else round((pp.votes / nullif(t.total_votes,0)) * 100.0, 2)
+    end as percent,
+    rank() over (partition by pp.week_id order by pp.votes desc, pp.creator_user_id asc) as rank
+  from per_participant pp
+  cross join totals t
+  order by rank;
+$$;
+
+-- 5) OPTIONAL: Materialized view for cheap reads (refresh ~10s by a job)
+create materialized view public.week_leaderboards_mv as
+with totals as (
+  select week_id, sum(votes)::numeric as total_votes
+  from public.week_vote_totals
+  group by week_id
+),
+joined as (
+  select
+    wp.week_id,
+    wp.creator_user_id,
+    coalesce(wvt.votes, 0)::numeric as votes
+  from public.week_participants wp
+  left join public.week_vote_totals wvt
+    on wvt.week_id = wp.week_id
+   and wvt.creator_user_id = wp.creator_user_id
+)
+select
+  j.week_id,
+  j.creator_user_id,
+  case when t.total_votes = 0 then 0
+       else round((j.votes / nullif(t.total_votes,0)) * 100.0, 2)
+  end as percent,
+  rank() over (partition by j.week_id order by j.votes desc, j.creator_user_id asc) as rank
+from joined j
+join totals t using (week_id);
+
+-- Required for REFRESH CONCURRENTLY
+create unique index week_leaderboards_mv_pk
+  on public.week_leaderboards_mv (week_id, creator_user_id);
+
+-- 6) Helper to refresh MV concurrently (call from a scheduler every ~10s)
+create or replace function public.refresh_week_leaderboards_mv()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  refresh materialized view concurrently public.week_leaderboards_mv;
+end;
+$$;
+
+-- 7) OPTIONAL: Public API that serves from MV when available
+create or replace function public.get_week_leaderboard_cached(p_week_id bigint)
+returns table (
+  week_id bigint,
+  creator_user_id uuid,
+  percent numeric(6,2),
+  rank integer
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with mv as (
+    select week_id, creator_user_id, percent, rank
+    from public.week_leaderboards_mv
+    where week_id = p_week_id
+  )
+  select * from mv
+  union all
+  select * from public.get_week_leaderboard_public(p_week_id)
+  where not exists (select 1 from mv)
   order by rank;
 $$;
 
@@ -615,7 +700,7 @@ alter table public.user_roles         enable row level security;
 alter table public.role_permissions   enable row level security;
 alter table public.profiles           enable row level security;
 alter table public.user_suspensions   enable row level security;
-alter table public.messages           enable row level security;
+alter table public.chat_messages      enable row level security;
 alter table public.coin_topups        enable row level security;
 alter table public.coin_ledger        enable row level security;
 alter table public.competition_weeks  enable row level security;
@@ -684,11 +769,11 @@ create policy "suspensions.manage.moderate" on public.user_suspensions
   with check (public.authorize('users.moderate', auth.uid()));
 
 -- MESSAGES
-create policy "messages.select.authenticated" on public.messages
+create policy "chat_messages.select.authenticated" on public.chat_messages
   for select using (auth.role() = 'authenticated');
 
 -- users can create normal messages (not system) if not suspended
-create policy "messages.insert.self" on public.messages
+create policy "chat_messages.insert.self" on public.chat_messages
   for insert
   with check (
     author_user_id = auth.uid()
@@ -696,7 +781,7 @@ create policy "messages.insert.self" on public.messages
   );
 
 -- admins/mods can create SYSTEM messages (author_user_id must be null)
-create policy "messages.insert.system" on public.messages
+create policy "chat_messages.insert.system" on public.chat_messages
   for insert
   with check (
     author_user_id is null
@@ -704,7 +789,7 @@ create policy "messages.insert.system" on public.messages
   );
 
 -- users can update their own messages iff not deleted and not suspended
-create policy "messages.update.self_not_deleted" on public.messages
+create policy "chat_messages.update.self_not_deleted" on public.chat_messages
   for update
   using (
     author_user_id = auth.uid()
@@ -718,7 +803,7 @@ create policy "messages.update.self_not_deleted" on public.messages
   );
 
 -- moderators/admins can update any message that is not yet deleted
-create policy "messages.update.moderate" on public.messages
+create policy "chat_messages.update.moderate" on public.chat_messages
   for update
   using (
     deleted_at is null
@@ -815,7 +900,7 @@ create trigger no_delete_user_roles          before delete on public.user_roles 
 create trigger no_delete_role_permissions    before delete on public.role_permissions    for each row execute procedure public.prevent_delete();
 create trigger no_delete_profiles            before delete on public.profiles            for each row execute procedure public.prevent_delete();
 create trigger no_delete_user_suspensions    before delete on public.user_suspensions    for each row execute procedure public.prevent_delete();
-create trigger no_delete_messages            before delete on public.messages            for each row execute procedure public.prevent_delete();
+create trigger no_delete_chat_messages       before delete on public.chat_messages       for each row execute procedure public.prevent_delete();
 create trigger no_delete_coin_topups         before delete on public.coin_topups         for each row execute procedure public.prevent_delete();
 create trigger no_delete_coin_ledger         before delete on public.coin_ledger         for each row execute procedure public.prevent_delete();
 create trigger no_delete_competition_weeks   before delete on public.competition_weeks   for each row execute procedure public.prevent_delete();
@@ -827,7 +912,7 @@ create trigger no_delete_app_settings        before delete on public.app_setting
 -- REPLICA IDENTITY (for realtime "previous data")
 -- -----------------------
 alter table public.users              replica identity full;
-alter table public.messages           replica identity full;
+alter table public.chat_messages      replica identity full;
 alter table public.profiles           replica identity full;
 alter table public.user_suspensions   replica identity full;
 alter table public.competition_weeks  replica identity full;
@@ -848,8 +933,8 @@ as $$
     -- prevent race in first-user admin promotion
     perform pg_advisory_xact_lock(42);
 
-  insert into public.users (id, email, username, password_hash, avatar_url)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'username', new.email), '', null);  -- empty password_hash if coming from Supabase
+  insert into public.users (id, username, avatar_url)
+  values (new.id, coalesce(new.raw_user_meta_data->>'username', new.email), null);  -- empty password_hash if coming from Supabase
 
     -- First user becomes admin (re-check under lock)
     select count(*) = 1 from auth.users into is_first_user;
@@ -859,16 +944,16 @@ as $$
     end if;
 
     -- Plus-address overrides for quick testing
-    if position('+supaadmin@' in new.email) > 0 then
-      insert into public.user_roles (user_id, role) values (new.id, 'admin')
-      on conflict do nothing;
-    elsif position('+supamod@' in new.email) > 0 then
-      insert into public.user_roles (user_id, role) values (new.id, 'moderator')
-      on conflict do nothing;
-    elsif position('+supacreator@' in new.email) > 0 then
-      insert into public.user_roles (user_id, role) values (new.id, 'creator')
-      on conflict do nothing;
-    end if;
+    -- if position('+supaadmin@' in new.email) > 0 then
+    --   insert into public.user_roles (user_id, role) values (new.id, 'admin')
+    --   on conflict do nothing;
+    -- elsif position('+supamod@' in new.email) > 0 then
+    --   insert into public.user_roles (user_id, role) values (new.id, 'moderator')
+    --   on conflict do nothing;
+    -- elsif position('+supacreator@' in new.email) > 0 then
+    --   insert into public.user_roles (user_id, role) values (new.id, 'creator')
+    --   on conflict do nothing;
+    -- end if;
 
     return new;
   end;
@@ -879,24 +964,8 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- -----------------------
--- REALTIME PUBLICATION (no channels)
--- -----------------------
-begin;
-  drop publication if exists supabase_realtime;
-  create publication supabase_realtime;
-commit;
-
-alter publication supabase_realtime add table
-  public.messages,
-  public.users,
-  public.profiles,
-  public.user_suspensions,
-  public.competition_weeks,
-  public.week_participants;
-  
--- 1) Function: broadcast every change on public.messages
-create or replace function public.messages_changes()
+-- 1) Function: broadcast every change on public.chat_messages
+create or replace function public.chat_messages_changes()
 returns trigger
 security definer
 language plpgsql
@@ -905,10 +974,10 @@ as $$
 begin
   -- One global topic for all messages (no channels in your schema)
   perform realtime.broadcast_changes(
-    'topic:messages',   -- clients subscribe to this topic
+    'LIVE_EVENTS',   -- clients subscribe to this topic
     'CHAT_MESSAGE',     -- event name clients can filter on: INSERT | UPDATE | DELETE
     TG_OP,              -- operation (mirrors event)
-    TG_TABLE_NAME,      -- 'messages'
+    TG_TABLE_NAME,      -- 'chat_messages'
     TG_TABLE_SCHEMA,    -- 'public'
     NEW,                -- new row (NULL on DELETE)
     OLD                 -- old row (NULL on INSERT)
@@ -918,10 +987,10 @@ end;
 $$;
 
 -- 2) AFTER trigger to capture all row-level mutations
-drop trigger if exists trg_messages_changes on public.messages;
-create trigger trg_messages_changes
-after insert or update or delete on public.messages
-for each row execute procedure public.messages_changes();
+drop trigger if exists trg_chat_messages_changes on public.chat_messages;
+create trigger trg_chat_messages_changes
+after insert or update or delete on public.chat_messages
+for each row execute procedure public.chat_messages_changes();
 
 -- -----------------------
 -- PERMISSIONS SEED
@@ -939,13 +1008,6 @@ on conflict (role, permission) do nothing;
 -- -----------------------
 -- DUMMY DATA (optional)
 -- -----------------------
--- insert into public.users (id, username, email, password_hash)
--- values ('8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e', 'supabot', 'sanaenkh+admin@gmail.com', '')
--- on conflict (id) do nothing;
-
--- insert into public.messages (message, author_user_id)
--- values ('Hello World 👋', '8d0fd2b3-9ca7-4d9e-a95f-9e13dded323e')
--- on conflict do nothing;
 
 -- Create 4 competition weeks (titles only)
 insert into public.competition_weeks (week_number, title, starts_at, ends_at, is_active)
