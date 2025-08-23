@@ -102,16 +102,17 @@ export function LivechatClient({ user }: LivechatClientProps) {
       <RealtimeChat
         messages={[
           {
-            content: "Тавтай морилно уу",
-            user: {
-              id: "SYSTEM",
-              name: "SYSTEM",
-              role: "system",
-              avatar: "https://github.com/shadcn.png",
-              color: "red",
-            },
-            createdAt: "2021-01-01T00:00:00Z",
             id: "WELCOME_MESSAGE",
+            message: "Тавтай морилно уу",
+            author_user_id: "SYSTEM",
+            author_username: "SYSTEM",
+            message_source: "system",
+            author_avatar_url: "https://github.com/shadcn.png",
+            author_color: "red",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            deleted_at: null,
+            deleted_by: null,
           },
         ]}
         onMessage={() => {

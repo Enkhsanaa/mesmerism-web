@@ -2,11 +2,10 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Star, Crown, Shield, Bot } from "lucide-react";
-// import type { ChatMessage } from "@/hooks/use-realtime-chat";
-import type { UIMessage } from "./realtime-chat";
+import type { ChatMessage } from "@/hooks/use-realtime-chat";
 
 interface ChatMessageItemProps {
-  message: UIMessage;
+  message: ChatMessage;
   isOwnMessage: boolean;
   showHeader: boolean;
 }
@@ -49,7 +48,7 @@ export const ChatMessageItem = ({
     }
   };
 
-  const roleInfo = getRoleInfo(message.user.role);
+  const roleInfo = getRoleInfo(message.message_source);
   const RoleIcon = roleInfo.icon;
 
   // Generate avatar fallback from username
@@ -89,9 +88,12 @@ export const ChatMessageItem = ({
       {/* Avatar - only show when header is visible */}
       {showHeader ? (
         <Avatar className="w-10 h-10 flex-shrink-0 mt-1">
-          <AvatarImage src={message.user.avatar} alt={message.user.name} />
+          <AvatarImage
+            src={message.author_avatar_url || ""}
+            alt={message.author_username || ""}
+          />
           <AvatarFallback className="bg-muted text-muted-foreground font-medium">
-            {getAvatarFallback(message.user.name)}
+            {getAvatarFallback(message.author_username || "")}
           </AvatarFallback>
         </Avatar>
       ) : (
@@ -106,19 +108,24 @@ export const ChatMessageItem = ({
             <span
               className={cn(
                 "font-semibold text-sm hover:underline cursor-pointer",
-                message.user.color
+                message.author_color
                   ? undefined
-                  : getUsernameColor(message.user.name, message.user.role)
+                  : getUsernameColor(
+                      message.author_username || "",
+                      message.message_source
+                    )
               )}
               style={
-                message.user.color ? { color: message.user.color } : undefined
+                message.author_color
+                  ? { color: message.author_color }
+                  : undefined
               }
             >
-              {message.user.name}
+              {message.author_username}
             </span>
 
             {/* Role Badge */}
-            {message.user.role && RoleIcon && (
+            {message.message_source && RoleIcon && (
               <Badge
                 variant="outline"
                 className={cn(
@@ -128,13 +135,13 @@ export const ChatMessageItem = ({
                 )}
               >
                 <RoleIcon className="w-3 h-3" />
-                {message.user.role}
+                {message.message_source}
               </Badge>
             )}
 
             {/* Timestamp */}
             <span className="text-muted-foreground text-xs ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-              {new Date(message.createdAt).toLocaleTimeString("en-US", {
+              {new Date(message.created_at).toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
@@ -150,7 +157,7 @@ export const ChatMessageItem = ({
             !showHeader && "pl-0"
           )}
         >
-          {message.content}
+          {message.message}
         </div>
       </div>
     </div>

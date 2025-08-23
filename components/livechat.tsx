@@ -1,4 +1,3 @@
-import { RealtimeChat } from "@/components/realtime-chat";
 import { getUser } from "@/lib/db/queries";
 import { LivechatClient } from "./livechat-client";
 
