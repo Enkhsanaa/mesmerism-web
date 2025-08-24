@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import BubbleIcon from "@/components/icons/bubble";
+import Fire from "@/components/icons/fire";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,8 @@ export default function TestPage() {
     <div className="grid gap-16">
       <Header />
       <div className="grid gap-8 max-w-[1312px] mx-auto w-full">
-        <div className="w-full aspect-[3.44] bg-red-500"></div>
+        <Fire className="w-full" />
+        {/* <div className="w-full aspect-[3.44] bg-red-500"></div>
         <div className="w-full h-[900px] grid md:grid-cols-[0.7fr_0.3fr] gap-8">
           <div className="flex flex-col gap-8 order-2 md:order-1">
             <CreatorCard />
@@ -41,7 +43,7 @@ export default function TestPage() {
             <div className="bg-black/20 h-[200px]" />
           </div>
           <div className="bg-slate-200 order-1 md:order-2"></div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

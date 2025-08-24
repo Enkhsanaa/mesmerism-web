@@ -8,7 +8,7 @@ export default async function Home() {
     <>
       <Banner />
       <div className="md:flex flex-wrap w-full gap-5">
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col gap-8">
           <Prize />
           <YoutubeList />
         </div>

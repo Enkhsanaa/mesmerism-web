@@ -10,6 +10,8 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { formatAmount } from "@/lib/utils";
 import Link from "next/link";
+import { GlassButton } from "./ui/glass-button";
+import { Plus } from "lucide-react";
 
 interface User {
   id: string;
@@ -128,13 +130,17 @@ export default function HeaderClient() {
           <Badge variant="secondary">beta</Badge>
         </div>
         <div className="flex gap-x-4">
-          <Button
-            variant="secondary"
-            className="font-extrabold text-base gap-x-2"
-          >
-            <CoinIcon className="size-6" />
-            {formatAmount(balance)}
-          </Button>
+          <div className="relative isolate h-9">
+            <div className="absolute top-1/2 -translate-y-1/2 left-0 -translate-x-1/2 z-50 bg-[#FAD02C] rounded-full text-black p-1">
+              <Plus className="size-4" />
+            </div>
+            <div className="-inset-[1px] absolute rounded-[6px] bg-linear-to-r from-[#FAD02C] to-white/20 -z-20"></div>
+            <div className="inset-0 absolute rounded-[6px] bg-[#202225] -z-10"></div>
+            <Button className="rounded-[6px] !px-6 bg-white/10 text-white font-extrabold">
+              <CoinIcon className="size-6" />
+              {formatAmount(balance)}
+            </Button>
+          </div>
           <Link href="/profile">
             <Avatar className="size-10">
               <AvatarImage src={user?.avatarUrl ?? ""} />

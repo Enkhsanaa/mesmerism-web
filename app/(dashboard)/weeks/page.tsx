@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
-import { Check, X } from "lucide-react";
+import { Check, X, Users } from "lucide-react";
 import { EditWeekModal } from "@/components/modals/edit-week-modal";
+import AddParticipantsModal from "@/components/modals/add-participants-modal";
 
 export default function WeeksPage() {
   const { supabase } = useRealtime();
@@ -23,6 +24,9 @@ export default function WeeksPage() {
     null
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [participantsWeek, setParticipantsWeek] =
+    useState<DbCompetitionWeek | null>(null);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
 
   useEffect(() => {
     supabase
@@ -47,6 +51,16 @@ export default function WeeksPage() {
     setWeeks((prevWeeks) =>
       prevWeeks.map((week) => (week.id === updatedWeek.id ? updatedWeek : week))
     );
+  };
+
+  const handleManageParticipants = (week: DbCompetitionWeek) => {
+    setParticipantsWeek(week);
+    setIsParticipantsModalOpen(true);
+  };
+
+  const handleCloseParticipantsModal = () => {
+    setIsParticipantsModalOpen(false);
+    setParticipantsWeek(null);
   };
 
   return (
@@ -94,13 +108,22 @@ export default function WeeksPage() {
                     <X className="size-4 text-red-500" strokeWidth={3} />
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="flex gap-2">
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => handleEditWeek(week)}
                   >
                     Засварлах
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleManageParticipants(week)}
+                    className="text-white border-gray-600 hover:bg-gray-700"
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    Оролцогчид
                   </Button>
                 </TableCell>
               </TableRow>
@@ -114,6 +137,12 @@ export default function WeeksPage() {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onWeekUpdated={handleWeekUpdated}
+      />
+
+      <AddParticipantsModal
+        week={participantsWeek}
+        isOpen={isParticipantsModalOpen}
+        onClose={handleCloseParticipantsModal}
       />
     </main>
   );

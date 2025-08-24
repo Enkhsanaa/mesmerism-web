@@ -1,9 +1,15 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import VoteModal from "./modals/vote.modal";
-import { useEffect, useState } from "react";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { HandHeart, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import VoteModal from "./modals/vote.modal";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import Fire from "./icons/fire";
+import { cn } from "@/lib/utils";
+import { GlassButton } from "./ui/glass-button";
 
 function CreatorCard({ creator }: { creator: WeekStanding }) {
   const [openVoteModal, setOpenVoteModal] = useState(false);
@@ -11,46 +17,65 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
   const handleCloseVoteModal = () => {
     setOpenVoteModal(false);
   };
+
+  // Get the creator's initials for fallback
+  const getInitials = (username: string | null) => {
+    if (!username) return "??";
+    return username.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div>
-      <div
-        className="flex flex-col justify-center py-4 w-full h-[140px] rounded-3xl mt-5 px-6"
-        style={{ backgroundColor: "#292B2F" }}
-      >
-        <div className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6">
-          {/* Left: Rank */}
-          <span className="text-white text-base mr-4">1</span>
-          {/* Avatar with badge */}
-          <div className="relative mr-4">
-            <Avatar className="size-12 border-yellow-300 border-2">
-              <AvatarImage src="https://github.com/enkhsanaa.png" />
-              <AvatarFallback>EN</AvatarFallback>
-            </Avatar>
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-xs text-white px-2 py-0.5 rounded-full">
-              PLS
-            </span>
-          </div>
-          {/* Username and progress */}
-          <div className="flex-1">
-            <div className="text-white font-semibold">Markiplier</div>
-            <div className="w-full bg-gray-800 rounded-full h-1">
-              <div
-                className="bg-yellow-300 h-1 rounded-full"
-                style={{ width: "80%" }}
-              />
+      <div className="flex flex-col justify-center w-full rounded-3xl">
+        <div className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6 isolate">
+          <div className="flex items-center flex-3/5">
+            {/* Left: Rank */}
+            <span className="text-white text-base mr-4">{creator.rank}</span>
+            {/* Avatar with badge */}
+            <div className="relative mr-4">
+              <Avatar className="size-12 border-yellow-300 border-2">
+                <AvatarImage src={creator.avatarUrl || ""} />
+                <AvatarFallback>{getInitials(creator.username)}</AvatarFallback>
+              </Avatar>
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-xs text-white px-2 py-0.5 rounded-full">
+                {creator.percent.toFixed(1)}%
+              </span>
+            </div>
+            {/* Username and progress */}
+            <div className="flex-1 h-full flex gap-1 flex-col justify-between">
+              <div className="text-white font-semibold">
+                {creator.profileTitle || creator.username || "Unknown Creator"}
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1">
+                <div
+                  className="bg-yellow-300 h-1 rounded-full"
+                  style={{ width: `${Math.min(creator.percent, 100)}%` }}
+                />
+              </div>
+              <div className="text-white text-sm">
+                {creator.percent.toFixed(2)}%
+              </div>
             </div>
           </div>
           {/* Right: Button with accent */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
-            <button
-              className="flex items-center gap-2 bg-transparent text-white px-4 py-2 rounded-2xl font-bold shadow-lg"
-              onClick={() => setOpenVoteModal(true)}
-            >
-              Санал өгөх
-            </button>
+          <div className="flex-2/5 flex justify-end">
+            <GlassButton onClick={() => setOpenVoteModal(true)} size="md">
+              <div className="flex items-center gap-2">
+                <HandHeart className="size-4" />
+                Санал өгөх
+              </div>
+            </GlassButton>
           </div>
-          {/* Accent flame/shape can be added as an absolutely positioned SVG or image */}
-          {/* <img src="/flame-accent.svg" className="absolute right-0 top-0 h-full" alt="" /> */}
+          {creator.rank < 4 && (
+            <Fire
+              className={cn(
+                "absolute right-0 top-3 bottom-0 w-[344px] -z-10",
+                creator.rank === 1 && "-top-20",
+                creator.rank === 2 && "-top-10",
+                creator.rank === 3 && "-top-5"
+              )}
+            />
+          )}
         </div>
       </div>
 
@@ -59,11 +84,11 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
         isOpen={openVoteModal}
         onClose={handleCloseVoteModal}
         creator={{
-          id: "1",
-          username: "Markiplier",
-          avatar_url: "https://github.com/enkhsanaa.png",
+          id: creator.creatorId,
+          username: creator.username || "Unknown Creator",
+          avatar_url: creator.avatarUrl || "",
           color: "#FAD02C",
-          created_at: "2021-01-01",
+          created_at: new Date().toISOString(),
         }}
       />
     </div>
@@ -160,10 +185,22 @@ export default function Youtubelist() {
   }, [currentWeekId]);
 
   return (
-    <>
-      {creators.map((creator) => (
-        <CreatorCard key={creator.creatorId} creator={creator} />
-      ))}
-    </>
+    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8">
+      <div className="relative w-full m-0 p-0">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#DCDDDE] w-5 h-5" />
+        <Input
+          type="text"
+          name="search"
+          placeholder="Youtuber хайх"
+          defaultValue={""}
+          className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
+        />
+      </div>
+      <div className="grid gap-4">
+        {creators.map((creator) => (
+          <CreatorCard key={creator.creatorId} creator={creator} />
+        ))}
+      </div>
+    </div>
   );
 }
