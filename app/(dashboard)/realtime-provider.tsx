@@ -32,7 +32,10 @@ interface RealtimeContextType {
   userBalance: number | null;
   userRole: string | null;
   userSuspension: UserSuspension | null;
+  currentWeekId: number;
   isConnected: boolean;
+
+  setCurrentWeekId: (weekId: number) => void;
   subscribe: (
     eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
@@ -59,6 +62,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentWeekId, setCurrentWeekId] = useState<number>(1);
   const [userSuspension, setUserSuspension] = useState<UserSuspension | null>(
     null
   );
@@ -163,6 +167,19 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           setUserBalance(userBalance.coins);
         }
 
+        const { data: currentWeekId } = await supabase
+          .from("competition_weeks")
+          .select("id")
+          .eq("is_active", true)
+          .lte("starts_at", new Date().toISOString())
+          .gte("ends_at", new Date().toISOString())
+          .order("starts_at", { ascending: false, nullsFirst: true })
+          .limit(1)
+          .maybeSingle();
+        if (currentWeekId) {
+          setCurrentWeekId(currentWeekId.id);
+        }
+
         if (!session.data.session?.access_token) {
           console.error("No access token found");
           return;
@@ -233,7 +250,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       userBalance,
       userRole,
       userSuspension,
+      currentWeekId,
       isConnected,
+
+      setCurrentWeekId,
       subscribe,
       unsubscribe,
     }),

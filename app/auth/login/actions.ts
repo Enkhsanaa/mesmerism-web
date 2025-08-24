@@ -9,16 +9,16 @@ import { createClient } from "@/lib/supabase/server";
 // Zod schema for login validation
 const loginSchema = z.object({
   email: z
-    .email()
-    .min(1, "Email is required")
-    .max(255, "Email is too long")
+    .email("И-мэйл хаяг буруу байна")
+    .min(1, "И-мэйл хаяг оруулна уу")
+    .max(255, "И-мэйл хаяг 255 тэмдэгтээс илүү байж болохгүй")
     .trim()
     .toLowerCase(),
   password: z
-    .string()
-    .min(1, "Password is required")
-    .min(6, "Password must be at least 6 characters long")
-    .max(100, "Password is too long")
+    .string("Нууц үг буруу байна")
+    .min(1, "Нууц үг оруулна уу")
+    .min(6, "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой")
+    .max(100, "Нууц үг 100 тэмдэгтээс илүү байж болохгүй")
     .trim(),
 });
 
@@ -61,31 +61,32 @@ export async function login(
 
   if (error) {
     // Provide user-friendly error messages for common cases
-    let errorMessage = "Login failed. Please check your credentials.";
+    let errorMessage = "Нэвтрэх үйлдэл амжилтгүй боллоо.";
+    console.log("error", error.message);
 
     switch (error.message) {
       case "Invalid login credentials":
-        errorMessage = "Invalid email or password. Please try again.";
+        errorMessage = "И-мэйл эсвэл нууц үг буруу байна. Дахин оролдоно уу.";
         break;
       case "Email not confirmed":
-        errorMessage = "Please confirm your email address before logging in.";
+        errorMessage = "И-мэйл хаяг баталгаажуулна уу.";
         break;
       case "Too many requests":
-        errorMessage = "Too many login attempts. Please try again later.";
+        errorMessage =
+          "Та нэвтрэх олон удаагийн оролдлого хийсэн байна. Түр хүлээгээр дахин оролдоно уу.";
         break;
       case "User not found":
-        errorMessage = "No account found with this email address.";
+        errorMessage = "Бүртгэлгүй и-мэйл хаяг байна.";
         break;
-      case "Invalid email":
-        errorMessage = "Please enter a valid email address.";
+      case "Invalid email address":
+        errorMessage = "И-мэйл хаяг алдаатай байна.";
         break;
       case "Network error":
         errorMessage =
-          "Network error. Please check your connection and try again.";
+          "Таны интернет холболт дээр алдаа гарлаа. Дахин оролдоно уу.";
         break;
       default:
-        errorMessage =
-          error.message || "Login failed. Please check your credentials.";
+        errorMessage = error.message || "Нэвтрэх үйлдэл амжилтгүй боллоо.";
     }
 
     return {

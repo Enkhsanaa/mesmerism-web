@@ -10,27 +10,30 @@ import { createClient } from "@/lib/supabase/server";
 const registerSchema = z
   .object({
     username: z
-      .string()
-      .min(1, "Username is required")
-      .min(3, "Username must be at least 3 characters long")
-      .max(50, "Username is too long")
+      .string("Хэрэглэгчийн нэр буруу байна")
+      .min(1, "Хэрэглэгчийн нэр оруулна уу")
+      .min(3, "Хэрэглэгчийн нэр хамгийн багадаа 3 тэмдэгт байх ёстой")
+      .max(50, "Хэрэглэгчийн нэр 50 тэмдэгтээс илүү байж болохгүй")
       .trim(),
     email: z
-      .email()
-      .min(1, "Email is required")
-      .max(255, "Email is too long")
+      .email("И-мэйл хаяг буруу байна")
+      .min(1, "И-мэйл хаяг оруулна уу")
+      .max(255, "И-мэйл хаяг 255 тэмдэгтээс илүү байж болохгүй")
       .trim()
       .toLowerCase(),
     password: z
-      .string()
-      .min(1, "Password is required")
-      .min(6, "Password must be at least 6 characters long")
-      .max(100, "Password is too long")
+      .string("Нууц үг буруу байна")
+      .min(1, "Нууц үг оруулна уу")
+      .min(6, "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой")
+      .max(100, "Нууц үг 100 тэмдэгтээс илүү байж болохгүй")
       .trim(),
-    confirmPassword: z.string().min(1, "Please confirm your password").trim(),
+    confirmPassword: z
+      .string("Нууц үгээ давтан оруулна уу")
+      .min(1, "Нууц үгээ давтан оруулна уу")
+      .trim(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Нууц үгүүд хоорондоо таарахгүй байна",
     path: ["confirmPassword"],
   });
 
@@ -101,7 +104,7 @@ export async function signup(
       case "Password should be at least 6 characters":
         errorMessage = "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой.";
         break;
-      case "Invalid email":
+      case "Invalid email address":
         errorMessage = "И-мэйл хаяг алдаатай байна.";
         break;
       case "Email rate limit exceeded":
