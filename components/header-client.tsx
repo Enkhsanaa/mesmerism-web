@@ -12,6 +12,7 @@ import { formatAmount } from "@/lib/utils";
 import Link from "next/link";
 import { GlassButton } from "./ui/glass-button";
 import { Plus } from "lucide-react";
+import { useModal } from "@/app/(dashboard)/modal-provider";
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface User {
 }
 
 export default function HeaderClient() {
+  const { setCoinModalOpen } = useModal();
   const [user, setUser] = useState<User | null>(null);
   const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,7 +138,10 @@ export default function HeaderClient() {
             </div>
             <div className="-inset-[1px] absolute rounded-[6px] bg-linear-to-r from-[#FAD02C] to-white/20 -z-20"></div>
             <div className="inset-0 absolute rounded-[6px] bg-[#202225] -z-10"></div>
-            <Button className="rounded-[6px] !px-6 bg-white/10 text-white font-extrabold hover:bg-white/20">
+            <Button
+              className="rounded-[6px] !px-6 bg-white/10 text-white font-extrabold hover:bg-white/20"
+              onClick={() => setCoinModalOpen(true)}
+            >
               <CoinIcon className="size-6" />
               {formatAmount(balance)}
             </Button>
