@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
-import { getUser } from "@/lib/db/queries";
+import { getUser, getUserBalance } from "@/lib/db/queries";
 import { SWRConfig } from "swr";
 
 const geistMono = Geist_Mono({
@@ -41,6 +41,7 @@ export default function RootLayout({
               // We do NOT await here
               // Only components that read this data will suspend
               "/api/user": getUser(),
+              "/api/user/coins": getUserBalance(),
             },
           }}
         >

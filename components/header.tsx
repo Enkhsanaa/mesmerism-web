@@ -1,21 +1,25 @@
-import { getUser, getUserBalance } from "@/lib/db/queries";
+import { createClient } from "@/lib/supabase/server";
+import { formatAmount } from "@/lib/utils";
+import Link from "next/link";
 import CoinIcon from "./icons/coin";
 import MesmerismIcon from "./icons/mesmerism";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { formatAmount } from "@/lib/utils";
-import Link from "next/link";
 
 export default async function Header() {
-  const user = await getUser();
-  const balance = await getUserBalance(user?.id ?? "");
+  const supabase = await createClient();
+  const { data: user } = await supabase.from("users").select("*").single();
+  const { data: coins } = await supabase
+    .from("user_coin_balances")
+    .select("*")
+    .single();
 
   return (
     <header className="bg-dark-background">
       <nav
         aria-label="Global"
-        className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
+        className="flex items-center justify-between p-6 lg:px-8"
       >
         <div className="flex items-center gap-x-4">
           <a href="/" className="-m-1.5 p-1.5">
@@ -30,7 +34,7 @@ export default async function Header() {
             className="font-extrabold text-base gap-x-2"
           >
             <CoinIcon className="size-6" />
-            {formatAmount(balance ?? 0)}
+            {formatAmount(coins?.balance ?? 0)}
           </Button>
           <Link href="/profile">
             <Avatar className="size-10">

@@ -56,26 +56,30 @@ create table public.role_permissions (
 comment on table public.role_permissions is 'Application permissions for each role.';
 
 -- RBAC: authorize()
-create or replace function public.authorize(
-  requested_permission public.app_permission,
-  user_id uuid
+CREATE OR REPLACE FUNCTION public.authorize(
+  p_requested_permission public.app_permission,
+  p_user_id uuid
 )
-returns boolean
-language plpgsql
-security definer
-set search_path = ''
-as $$
-  declare bind_permissions int;
-  begin
-    select count(*)
-    into bind_permissions
-    from public.role_permissions rp
-    join public.user_roles ur on rp.role = ur.role
-    where rp.permission = requested_permission
-      and ur.user_id = user_id;
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  has_perm boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.role_permissions rp
+    JOIN public.user_roles     ur ON rp.role = ur.role
+    WHERE rp.permission = p_requested_permission
+      AND ur.user_id   = p_user_id
+  )
+  INTO has_perm;
 
-    return bind_permissions > 0;
-  end;
+  RETURN has_perm;
+END;
 $$;
 
 -- Role-class for chat messages (admin > moderator > creator > user)
@@ -166,6 +170,56 @@ create index if not exists user_suspensions_target_expires_idx
 create index if not exists user_suspensions_target_perm_idx
   on public.user_suspensions (target_user_id)
   where expires_at is null;
+
+create or replace function public.user_suspensions_after_insert()
+returns trigger
+security definer
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- One global topic for all messages (no channels in your schema)
+  perform realtime.send(
+    jsonb_build_object(
+      'data', row_to_json(new)
+    ),
+    'USER_SUSPENSION',
+    'LIVE_EVENTS',
+    false
+  );
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_user_suspensions_ai on public.user_suspensions;
+create trigger trg_user_suspensions_ai
+after insert on public.user_suspensions
+for each row execute procedure public.user_suspensions_after_insert();
+
+create or replace function public.user_suspensions_after_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform realtime.send(
+    jsonb_build_object(
+      'data', row_to_json(old),
+      'cleared_suspension', true
+    ),
+    'USER_SUSPENSION',
+    'LIVE_EVENTS',
+    false
+  );
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_user_suspensions_ad on public.user_suspensions;
+create trigger trg_user_suspensions_ad
+after delete on public.user_suspensions
+for each row execute procedure public.user_suspensions_after_delete();
 
 -- -----------------------
 -- GLOBAL CHAT MESSAGES
@@ -761,7 +815,10 @@ create policy "profiles.manage.all" on public.profiles
 
 -- SUSPENSIONS (mods & admins manage/read -> users.moderate)
 create policy "suspensions.select.moderate" on public.user_suspensions
-  for select using (public.authorize('users.moderate', auth.uid()));
+  for select using (
+    public.authorize('users.moderate', auth.uid())
+    or auth.uid() = target_user_id
+  );
 
 create policy "suspensions.manage.moderate" on public.user_suspensions
   for all
@@ -899,7 +956,6 @@ create trigger no_delete_users               before delete on public.users      
 create trigger no_delete_user_roles          before delete on public.user_roles          for each row execute procedure public.prevent_delete();
 create trigger no_delete_role_permissions    before delete on public.role_permissions    for each row execute procedure public.prevent_delete();
 create trigger no_delete_profiles            before delete on public.profiles            for each row execute procedure public.prevent_delete();
-create trigger no_delete_user_suspensions    before delete on public.user_suspensions    for each row execute procedure public.prevent_delete();
 create trigger no_delete_chat_messages       before delete on public.chat_messages       for each row execute procedure public.prevent_delete();
 create trigger no_delete_coin_topups         before delete on public.coin_topups         for each row execute procedure public.prevent_delete();
 create trigger no_delete_coin_ledger         before delete on public.coin_ledger         for each row execute procedure public.prevent_delete();

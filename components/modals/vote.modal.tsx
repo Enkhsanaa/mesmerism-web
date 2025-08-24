@@ -12,32 +12,37 @@ import { useState } from "react";
 import CoinIcon from "../icons/coin";
 import { Input } from "../ui/input";
 import useSWR from "swr";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface VoteModalProps {
+  creator: DbUser;
   isOpen: boolean;
   onClose: () => void;
   onVote?: (value: number) => void;
 }
 
-export default function VoteModal({ isOpen, onClose, onVote }: VoteModalProps) {
-  const { data: user } = useSWR("/api/user", fetcher);
-  const { data: availableCoins } = useSWR("/api/user/coins", fetcher);
-
+export default function VoteModal({
+  creator,
+  isOpen,
+  onClose,
+  onVote,
+}: VoteModalProps) {
+  const { userBalance } = useRealtime();
   const [selectedCoins, setSelectedCoins] = useState(0);
 
   if (!isOpen) return null;
 
   const handleVote = (value: number) => {
     // Handle vote submission here
-    console.log(`Voted ${value} for ${user?.username}`);
+    console.log(`Voted ${value} for ${creator.username}`);
     onVote?.(value);
     onClose();
   };
 
   const handleMaxCoins = () => {
-    setSelectedCoins(availableCoins);
+    setSelectedCoins(userBalance ?? 0);
   };
 
   const handleMinusCoins = () => {
@@ -74,13 +79,13 @@ export default function VoteModal({ isOpen, onClose, onVote }: VoteModalProps) {
           {/* User info */}
           <div className="flex flex-col items-center justify-center gap-2">
             <Avatar className="size-12 border-yellow-300 border-2">
-              <AvatarImage src={user?.profilePicture || ""} />
+              <AvatarImage src={creator.avatar_url || ""} />
               <AvatarFallback>
-                {user?.username?.slice(0, 2).toUpperCase()}
+                {creator.username?.slice(0, 2).toUpperCase() || "AN"}
               </AvatarFallback>
             </Avatar>
             <p className="text-white font-semibold text-base">
-              {user?.username}
+              {creator.username}
             </p>
           </div>
 
@@ -103,7 +108,7 @@ export default function VoteModal({ isOpen, onClose, onVote }: VoteModalProps) {
             <Button
               size="icon"
               onClick={handlePlusCoins}
-              disabled={selectedCoins >= availableCoins}
+              disabled={selectedCoins >= (userBalance ?? 0)}
               className="bg-[#F8F9FA] text-[#212121] rounded-full h-[48px] w-[48px]"
             >
               <Plus className="h-[20px] w-[20px] text-[#212121]" />
@@ -124,7 +129,7 @@ export default function VoteModal({ isOpen, onClose, onVote }: VoteModalProps) {
               <p className="text-white font-semibold text-sm">Боломжтой:</p>
               <div className="flex items-center gap-[4px]">
                 <span className="text-white font-semibold text-sm">
-                  {availableCoins}
+                  {userBalance}
                 </span>
                 <CoinIcon className="size-6 text-[#FAD02C]" />
               </div>
@@ -143,7 +148,7 @@ export default function VoteModal({ isOpen, onClose, onVote }: VoteModalProps) {
             Болих
           </Button>
           <Button
-            disabled={selectedCoins <= 0 || selectedCoins > availableCoins}
+            disabled={selectedCoins <= 0 || selectedCoins > (userBalance ?? 0)}
             className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
           >
             Санал өгөх

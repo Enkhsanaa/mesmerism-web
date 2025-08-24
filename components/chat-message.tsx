@@ -1,7 +1,9 @@
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, Crown, Shield, Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Star, Crown, Shield, Bot, Check, X } from "lucide-react";
 import type { ChatMessage } from "@/hooks/use-realtime-chat";
 
 interface ChatMessageItemProps {
@@ -77,6 +79,19 @@ export const ChatMessageItem = ({
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
   };
+
+  if (message.deleted_at) {
+    return (
+      <div className="flex items-start hover:bg-muted/30 transition-colors group px-4 py-1">
+        <div className="w-13 h-1 flex-shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm text-muted-foreground leading-relaxed break-words italic">
+            Чат устгагдсан.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -157,7 +172,7 @@ export const ChatMessageItem = ({
             !showHeader && "pl-0"
           )}
         >
-          {message.message}
+          {message.message} {message.deleted_at}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getUser } from "@/lib/db/queries";
-import { User } from "../db/migrations/schema";
+import { users } from "../db/migrations/schema";
 
 export type ActionState = {
   error?: string;
@@ -30,7 +30,7 @@ export function validatedAction<S extends z.ZodType<any, any>, T>(
 type ValidatedActionWithUserFunction<S extends z.ZodType<any, any>, T> = (
   data: z.infer<S>,
   formData: FormData,
-  user: User
+  user: typeof users.$inferSelect
 ) => Promise<T>;
 
 export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(

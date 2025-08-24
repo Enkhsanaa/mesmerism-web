@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User } from "@/lib/db/migrations/schema";
+import { users } from "@/lib/db/migrations/schema";
 import { Loader2 } from "lucide-react";
 import { Suspense, useActionState, useState } from "react";
 import useSWR from "swr";
@@ -177,12 +177,15 @@ function AccountForm({
 }
 
 function AccountFormWithData({ state }: { state: ActionState }) {
-  const { data: user } = useSWR<User>("/api/user", fetcher);
+  const { data: user } = useSWR<typeof users.$inferSelect>(
+    "/api/user",
+    fetcher
+  );
   return (
     <AccountForm
       state={state}
       usernameValue={user?.username ?? ""}
-      emailValue={user?.email ?? ""}
+      emailValue=""
       colorValue={user?.color ?? ""}
       avatarUrlValue={user?.avatarUrl ?? ""}
     />

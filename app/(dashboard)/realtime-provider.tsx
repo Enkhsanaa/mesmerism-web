@@ -10,39 +10,35 @@ import type {
 
 // Event types for the website
 export type WebsiteEvent =
-  | { type: "CHAT_MESSAGE"; payload: any }
-  | { type: "PAYMENT_RECEIVED"; payload: any }
-  | { type: "VOTE_CREATOR"; payload: any }
-  | { type: "PAYMENT_RECEIVED"; payload: any }
-  | { type: "VOTE_CREATED"; payload: any }
-  | { type: "USER_JOINED"; payload: any }
-  | { type: "USER_LEFT"; payload: any }
-  | { type: "SYSTEM_ANNOUNCEMENT"; payload: any };
-
-// export interface ChatMessage {
-//     author_avatar_url: string | null;
-//     author_color: string;
-//     author_user_id: string;
-//     author_username: string;
-//     created_at: string;
-//     deleted_at: string | null;
-//     deleted_by: string | null;
-//     id: number;
-//     message: string;
-//     message_source: string;
-//     updated_at: string;
-// }
+  | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
+  | { type: "broadcast"; event: "PAYMENT_RECEIVED"; payload: any }
+  | { type: "broadcast"; event: "VOTE_CREATOR"; payload: any }
+  | { type: "broadcast"; event: "PAYMENT_RECEIVED"; payload: any }
+  | { type: "broadcast"; event: "VOTE_CREATED"; payload: any }
+  | {
+      type: "broadcast";
+      event: "USER_SUSPENSION";
+      payload: {
+        data: UserSuspension;
+        id: string;
+        cleared_suspension?: boolean;
+      };
+    }
+  | { type: "broadcast"; event: "SYSTEM_ANNOUNCEMENT"; payload: any };
 
 interface RealtimeContextType {
   supabase: SupabaseClient;
   user: User | null;
+  userBalance: number | null;
+  userRole: string | null;
+  userSuspension: UserSuspension | null;
   isConnected: boolean;
   subscribe: (
-    eventType: WebsiteEvent["type"],
+    eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
   ) => () => void;
   unsubscribe: (
-    eventType: WebsiteEvent["type"],
+    eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
   ) => void;
 }
@@ -61,6 +57,11 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
   const [isConnected, setIsConnected] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userSuspension, setUserSuspension] = useState<UserSuspension | null>(
+    null
+  );
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   // Event subscribers - map of event type to array of callbacks
@@ -71,7 +72,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
   // Subscribe to an event type
   const subscribe = (
-    eventType: WebsiteEvent["type"],
+    eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
   ) => {
     if (!subscribers.has(eventType)) {
@@ -93,7 +94,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
   // Unsubscribe from an event type
   const unsubscribe = (
-    eventType: WebsiteEvent["type"],
+    eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
   ) => {
     const callbacks = subscribers.get(eventType);
@@ -130,14 +131,48 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           console.error("Error getting session:", session.error);
           return;
         }
-        setUser(session.data.session?.user || null);
+        if (session.data.session?.user) {
+          setUser(session.data.session?.user);
+        }
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("*")
+          .eq("user_id", session.data.session?.user.id)
+          .limit(1);
+        if (userRole && userRole.length > 0) {
+          setUserRole(userRole[0].role);
+        }
+        const { data: userSuspension } = await supabase
+          .from("user_suspensions")
+          .select("*")
+          .eq("target_user_id", session.data.session?.user.id)
+          .or("expires_at.is.null,expires_at.gt.now")
+          .order("expires_at", { ascending: true, nullsFirst: true })
+          .limit(1);
+        if (userSuspension && userSuspension.length > 0) {
+          setUserSuspension(userSuspension[0]);
+        }
+
+        const { data: userBalance } = await supabase
+          .from("user_coin_balances")
+          .select("*")
+          .eq("user_id", session.data.session?.user.id)
+          .maybeSingle();
+        console.log("userBalance", userBalance);
+        if (userBalance) {
+          setUserBalance(userBalance.coins);
+        }
+
         if (!session.data.session?.access_token) {
           console.error("No access token found");
           return;
         }
         await supabase.realtime.setAuth(session.data.session?.access_token);
 
-        if (isCancelled) return;
+        if (isCancelled) {
+          console.log("setupChannel cancelled");
+          return;
+        }
 
         const newChannel = supabase
           .channel("LIVE_EVENTS", {
@@ -159,34 +194,11 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
               handleEvent("CHAT_MESSAGE", payload);
             }
           )
-          //   .on("broadcast", { event: "CHAT_MESSAGE" }, (payload) => {
-          //     console.log("CHAT_MESSAGE received:", payload);
-          //     handleEvent("CHAT_MESSAGE", payload);
-          //   })
-          //   .on("broadcast", { event: "PAYMENT_RECEIVED" }, (payload) => {
-          //     console.log("PAYMENT_RECEIVED received:", payload);
-          //     handleEvent("PAYMENT_RECEIVED", payload);
-          //   })
-          //   .on("broadcast", { event: "VOTE_CREATOR" }, (payload) => {
-          //     console.log("VOTE_CREATOR received:", payload);
-          //     handleEvent("VOTE_CREATOR", payload);
-          //   })
-          //   .on("broadcast", { event: "VOTE_CREATED" }, (payload) => {
-          //     console.log("VOTE_CREATED received:", payload);
-          //     handleEvent("VOTE_CREATED", payload);
-          //   })
-          //   .on("broadcast", { event: "USER_JOINED" }, (payload) => {
-          //     console.log("USER_JOINED received:", payload);
-          //     handleEvent("USER_JOINED", payload);
-          //   })
-          //   .on("broadcast", { event: "USER_LEFT" }, (payload) => {
-          //     console.log("USER_LEFT received:", payload);
-          //     handleEvent("USER_LEFT", payload);
-          //   })
-          //   .on("broadcast", { event: "SYSTEM_ANNOUNCEMENT" }, (payload) => {
-          //     console.log("SYSTEM_ANNOUNCEMENT received:", payload);
-          //     handleEvent("SYSTEM_ANNOUNCEMENT", payload);
-          //   })
+          .on("broadcast", { event: "*" }, (payload) => {
+            const { event, payload: eventPayload } = payload as WebsiteEvent;
+            console.log(event, " received:", eventPayload);
+            handleEvent(event, eventPayload);
+          })
           .subscribe((status) => {
             console.log("Realtime subscription status:", status);
             if (status === "SUBSCRIBED" && !isCancelled) {
@@ -218,6 +230,9 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     () => ({
       supabase,
       user,
+      userBalance,
+      userRole,
+      userSuspension,
       isConnected,
       subscribe,
       unsubscribe,

@@ -2,7 +2,7 @@
 
 import { validatedActionWithUser } from "@/lib/auth/middleware";
 import { db } from "@/lib/db/drizzle";
-import { User, users } from "@/lib/db/migrations/schema";
+import { users } from "@/lib/db/migrations/schema";
 import { createClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -22,7 +22,7 @@ export const updateProfile = validatedActionWithUser(
     console.log("color", color);
     const supabase = await createClient();
 
-    const changes: Partial<User> = {};
+    const changes: Partial<typeof users.$inferInsert> = {};
 
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, user.id),
@@ -78,7 +78,7 @@ export const updateProfile = validatedActionWithUser(
           ? "Профайл амжилттай шинэчлэгдлээ."
           : undefined,
       username: changes.username || user.username,
-      email: user.email,
+
       avatarUrl: changes.avatarUrl || user.avatarUrl,
       color: changes.color || user.color,
     };

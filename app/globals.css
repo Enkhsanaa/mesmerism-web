@@ -99,3 +99,8 @@
   background-color: var(--button-yellow) !important;
   border-color: var(--button-yellow) !important;
 }
+
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: var(--button-yellow) var(--color-card-background);
+}

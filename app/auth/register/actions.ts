@@ -89,33 +89,33 @@ export async function signup(
       },
     },
   });
-  console.log(error);
 
   if (error) {
     // Provide user-friendly error messages for common cases
-    let errorMessage = "Registration failed. Please try again.";
+    let errorMessage = "Бүртгэл амжилтгүй боллоо.";
 
     switch (error.message) {
       case "User already registered":
-        errorMessage = "An account with this email already exists.";
+        errorMessage = "Бүртгэлтэй и-мэйл хаяг байна.";
         break;
       case "Password should be at least 6 characters":
-        errorMessage = "Password must be at least 6 characters long.";
+        errorMessage = "Нууц үг хамгийн багадаа 6 тэмдэгт байх ёстой.";
         break;
       case "Invalid email":
-        errorMessage = "Please enter a valid email address.";
+        errorMessage = "И-мэйл хаяг алдаатай байна.";
         break;
       case "Email rate limit exceeded":
         errorMessage =
-          "Too many registration attempts. Please try again later.";
+          "Бүртгэл түр хугацаанд идэвхигүй байна. Та түр хүлээнэ үү.";
         break;
       case "Network error":
-        errorMessage =
-          "Network error. Please check your connection and try again.";
+        errorMessage = "Таны интернет холболт дээр алдаа гарлаа.";
+        break;
+      case "Database error saving new user":
+        errorMessage = "Хэрэглэгчийн нэр бүртгэлтэй байна.";
         break;
       default:
-        errorMessage =
-          error.message || "Registration failed. Please try again.";
+        errorMessage = error.message || "Бүртгэл амжилтгүй боллоо.";
     }
 
     return {

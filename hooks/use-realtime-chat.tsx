@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // ---------- Wire & UI types ----------
 
@@ -64,9 +64,13 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         if (!includeDeleted && row.deleted_at) {
           const idx = curr.findIndex((m) => m.id === row.id);
           if (idx === -1) return curr;
+          row.deleted_at = new Date().toISOString();
           const next = curr.slice();
-          next.splice(idx, 1);
+          next[idx] = row;
           return next;
+          // const next = curr.slice();
+          // next.splice(idx, 1);
+          // return next;
         }
         const idx = curr.findIndex((m) => m.id === row.id);
         if (idx === -1) return sortAsc([...curr, row]);
@@ -196,8 +200,22 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
         message: text,
         author_user_id: userRes.user.id,
       });
-      if (error) console.error("insert message error", error);
+      if (error) {
+        console.error("Та чатнаас бандуулсан байна");
+      }
       // No optimistic push — realtime INSERT will arrive
+    },
+    [supabase]
+  );
+
+  // -------- Update (user message) --------
+  const updateMessage = useCallback(
+    async (messageId: string, content: string) => {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({ message: content })
+        .eq("id", messageId);
+      if (error) console.error("update message error", error);
     },
     [supabase]
   );
@@ -205,7 +223,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
   // -------- Soft delete via RPC --------
   const deleteMessage = useCallback(
     async (messageId: string) => {
-      const { error } = await supabase.rpc("mark_message_deleted", {
+      const { error } = await supabase.rpc("mark_chat_message_deleted", {
         p_message_id: Number(messageId),
       });
       if (error) console.error("delete message error", error);
@@ -234,6 +252,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     hasMore,
     loadMore,
     sendMessage,
+    updateMessage,
     deleteMessage,
     postSystemMessage,
   };

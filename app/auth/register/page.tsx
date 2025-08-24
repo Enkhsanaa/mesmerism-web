@@ -55,7 +55,7 @@ export default function Register() {
               Бүртгүүлэх
             </p>
             <p className="text-sm text-[#DCDDDE] p-0 m-0">
-              Та өөрийн нэвтрэх нэр болон нууц үгээ үүсгэнэ үү.
+              Та өөрийн хэрэглэгчийн нэр болон нууц үгээ үүсгэнэ үү.
             </p>
           </div>
 
@@ -79,7 +79,7 @@ export default function Register() {
               <Input
                 type="text"
                 name="username"
-                placeholder="Нэвтрэх нэр"
+                placeholder="Хэрэглэгчийн нэр"
                 defaultValue={state.username || ""}
                 className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
               />

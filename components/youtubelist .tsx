@@ -55,7 +55,16 @@ export default function Youtubelist() {
       </div>
 
       {/* Vote Modal */}
-      <VoteModal isOpen={openVoteModal} onClose={handleCloseVoteModal} />
+      <VoteModal
+        isOpen={openVoteModal}
+        onClose={handleCloseVoteModal}
+        creator={{
+          id: "1",
+          username: "Markiplier",
+          avatar_url: "https://github.com/enkhsanaa.png",
+          color: "#FAD02C",
+        }}
+      />
     </>
   );
 }

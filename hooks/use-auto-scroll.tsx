@@ -19,7 +19,7 @@ interface UseAutoScrollOptions {
 
 interface UseAutoScrollReturn {
   /** Ref to attach to the scrollable container */
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   /** Whether auto-scroll is currently enabled */
   isAutoScrollEnabled: boolean;
   /** Whether to show the scroll-to-bottom button */

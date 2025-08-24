@@ -1,14 +1,25 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { ChatMessageItem } from "@/components/chat-message";
-import { ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
-import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, Send } from "lucide-react";
+import { useAutoScroll } from "@/hooks/use-auto-scroll";
+import { ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
+import { useUserManage } from "@/hooks/use-user-manage";
+import { cn } from "@/lib/utils";
+import { ArrowDown, Ban, Clock, Hammer, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "./ui/context-menu";
 
 interface RealtimeChatProps {
   onMessage?: (messages: ChatMessage[]) => void;
@@ -19,7 +30,8 @@ export const RealtimeChat = ({
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { user } = useRealtime();
+  const { user, userRole } = useRealtime();
+  const { banUser, timeoutUser, unbanUser } = useUserManage();
   const {
     messages: dbMessages,
     sendMessage,
@@ -27,6 +39,7 @@ export const RealtimeChat = ({
     isLoading,
     hasMore,
     loadMore,
+    deleteMessage,
   } = useRealtimeChat({ pageSize: 50 });
 
   const [newMessage, setNewMessage] = useState("");
@@ -102,7 +115,7 @@ export const RealtimeChat = ({
       {/* Messages */}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4 relative"
+        className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4 relative scrollbar-custom"
       >
         {allMessages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground">
@@ -117,16 +130,114 @@ export const RealtimeChat = ({
               !prevMessage ||
               prevMessage.author_user_id !== message.author_user_id;
 
+            if (!userRole && message.author_user_id !== user?.id) {
+              return (
+                <div
+                  key={message.id}
+                  className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+                >
+                  <ChatMessageItem
+                    isOwnMessage={message.author_user_id === user?.id}
+                    message={message}
+                    showHeader={showHeader}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div
                 key={message.id}
                 className="animate-in fade-in slide-in-from-bottom-4 duration-300"
               >
-                <ChatMessageItem
-                  isOwnMessage={message.author_user_id === user?.id}
-                  message={message}
-                  showHeader={showHeader}
-                />
+                <ContextMenu>
+                  <ContextMenuTrigger>
+                    <ChatMessageItem
+                      isOwnMessage={message.author_user_id === user?.id}
+                      message={message}
+                      showHeader={showHeader}
+                    />
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    {userRole === "admin" && (
+                      <>
+                        <ContextMenuItem
+                          onClick={() => unbanUser(message.author_user_id)}
+                        >
+                          <Hammer className="size-4 mr-2" />
+                          Чатны бан гаргах
+                        </ContextMenuItem>
+                        <ContextMenuSub>
+                          <ContextMenuSubTrigger>
+                            <Clock className="size-4 mr-2" />
+                            Чатнаас түр бандах
+                          </ContextMenuSubTrigger>
+                          <ContextMenuSubContent>
+                            <ContextMenuItem
+                              onClick={() =>
+                                timeoutUser(
+                                  message.author_user_id,
+                                  30,
+                                  "30 секунд"
+                                )
+                              }
+                            >
+                              30 сек
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                              onClick={() =>
+                                timeoutUser(
+                                  message.author_user_id,
+                                  300,
+                                  "5 минут"
+                                )
+                              }
+                            >
+                              5 мин
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                              onClick={() =>
+                                timeoutUser(
+                                  message.author_user_id,
+                                  900,
+                                  "15 минут"
+                                )
+                              }
+                            >
+                              15 мин
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                              onClick={() =>
+                                timeoutUser(
+                                  message.author_user_id,
+                                  3600,
+                                  "1 цаг"
+                                )
+                              }
+                            >
+                              1 цаг
+                            </ContextMenuItem>
+                          </ContextMenuSubContent>
+                        </ContextMenuSub>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          className="text-destructive"
+                          onClick={() => banUser(message.author_user_id)}
+                        >
+                          <Ban className="size-4 mr-2" />
+                          Чатнаас бандах
+                        </ContextMenuItem>
+                      </>
+                    )}
+                    <ContextMenuItem
+                      onClick={() => deleteMessage(message.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="size-4 mr-2" />
+                      Устгах
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               </div>
             );
           })}
