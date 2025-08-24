@@ -2,13 +2,21 @@
 
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { ChatMessageItem } from "@/components/chat-message";
+import { EmojiPicker } from "@/components/emoji-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { useUserManage } from "@/hooks/use-user-manage";
-import { cn } from "@/lib/utils";
-import { ArrowDown, Ban, Clock, Hammer, Send, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  Ban,
+  Clock,
+  Hammer,
+  Send,
+  Smile,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ContextMenu,
@@ -43,6 +51,7 @@ export const RealtimeChat = ({
   } = useRealtimeChat({ pageSize: 50 });
 
   const [newMessage, setNewMessage] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // Merge provided initial messages with realtime messages
   const allMessages = useMemo<ChatMessage[]>(() => {
@@ -67,6 +76,28 @@ export const RealtimeChat = ({
     },
     [newMessage, isConnected, sendMessage]
   );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage(e);
+      }
+    },
+    [handleSendMessage]
+  );
+
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    setNewMessage((prev) => prev + emoji);
+  }, []);
+
+  const toggleEmojiPicker = useCallback(() => {
+    setShowEmojiPicker((prev) => !prev);
+  }, []);
+
+  const closeEmojiPicker = useCallback(() => {
+    setShowEmojiPicker(false);
+  }, []);
 
   // Use the dedicated auto-scroll hook
   const {
@@ -259,31 +290,56 @@ export const RealtimeChat = ({
       </div>
 
       {/* Composer */}
-      <form
-        onSubmit={handleSendMessage}
-        className="flex w-full gap-2 border-t border-border p-4"
-      >
-        <Input
-          className={cn(
-            "rounded-full bg-background text-sm transition-all duration-300",
-            isConnected && newMessage.trim() ? "w-[calc(100%-36px)]" : "w-full"
-          )}
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          disabled={!isConnected}
-        />
-        {isConnected && newMessage.trim() && (
-          <Button
-            className="aspect-square rounded-full animate-in fade-in slide-in-from-right-4 duration-300"
-            type="submit"
-            disabled={!isConnected}
+      <div className="relative">
+        <form
+          onSubmit={handleSendMessage}
+          className="flex w-full border-t border-border p-4"
+        >
+          <div
+            className="flex items-center w-full px-4 py-3 gap-3 border-none bg-card-background"
+            style={{ backgroundColor: "#34373C", borderRadius: "16px" }}
           >
-            <Send className="size-4" />
-          </Button>
-        )}
-      </form>
+            {/* Emoji button */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={toggleEmojiPicker}
+            >
+              <Smile className="size-5 text-muted-foreground hover:text-foreground transition-colors" />
+            </Button>
+
+            {/* Input field */}
+            <Input
+              className="flex-1 border-none text-sm focus:ring-0 focus:ring-offset-0 active:ring-0 active:ring-offset-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              style={{ backgroundColor: "#34373C", borderRadius: "16px" }}
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Chat here..."
+              disabled={!isConnected}
+            />
+
+            {/* Send button - always visible */}
+            <Button
+              className="aspect-square rounded-full p-2 transition-colors duration-200"
+              type="submit"
+              disabled={!isConnected || !newMessage.trim()}
+              variant="ghost"
+              size="sm"
+            >
+              <Send className="size-4" />
+            </Button>
+          </div>
+        </form>
+
+        {/* Emoji Picker */}
+        <EmojiPicker
+          isOpen={showEmojiPicker}
+          onEmojiSelect={handleEmojiSelect}
+          onClose={closeEmojiPicker}
+        />
+      </div>
     </div>
   );
 };

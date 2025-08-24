@@ -136,7 +136,7 @@ export default function HeaderClient() {
             </div>
             <div className="-inset-[1px] absolute rounded-[6px] bg-linear-to-r from-[#FAD02C] to-white/20 -z-20"></div>
             <div className="inset-0 absolute rounded-[6px] bg-[#202225] -z-10"></div>
-            <Button className="rounded-[6px] !px-6 bg-white/10 text-white font-extrabold">
+            <Button className="rounded-[6px] !px-6 bg-white/10 text-white font-extrabold hover:bg-white/20">
               <CoinIcon className="size-6" />
               {formatAmount(balance)}
             </Button>

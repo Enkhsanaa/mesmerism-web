@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { renderMessageWithEmojis } from "@/lib/emoji-renderer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -172,7 +173,7 @@ export const ChatMessageItem = ({
             !showHeader && "pl-0"
           )}
         >
-          {message.message} {message.deleted_at}
+          {renderMessageWithEmojis(message.message || "")}
         </div>
       </div>
     </div>
