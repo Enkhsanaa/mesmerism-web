@@ -5,6 +5,9 @@ import { Toaster } from "sonner";
 import { RealtimeProvider } from "./realtime-provider";
 import { SystemAnnouncementListener } from "@/components/system-announcement-listener";
 import { UserSuspensionListener } from "@/components/user-suspension-listener";
+import { ModalProvider } from "./modal-provider";
+import VoteModal from "@/components/modals/vote.modal";
+import CoinSelectModal from "@/components/modals/coin-select-modal";
 
 export default function DashboardLayout({
   children,
@@ -13,15 +16,18 @@ export default function DashboardLayout({
 }>) {
   return (
     <RealtimeProvider>
-      {/* Global realtime listeners - these don't render anything but listen to events */}
-      <SystemAnnouncementListener />
-      <UserSuspensionListener />
+      <ModalProvider>
+        <SystemAnnouncementListener />
+        <UserSuspensionListener />
 
-      <div className="mx-auto max-w-7xl">
-        <HeaderClient />
-        {children}
-        <Toaster position="bottom-right" richColors />
-      </div>
+        <div className="mx-auto max-w-7xl">
+          <HeaderClient />
+          {children}
+          <Toaster position="bottom-right" richColors />
+        </div>
+        <VoteModal />
+        <CoinSelectModal />
+      </ModalProvider>
     </RealtimeProvider>
   );
 }

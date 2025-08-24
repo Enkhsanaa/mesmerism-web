@@ -1,25 +1,20 @@
 "use client";
 
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { cn } from "@/lib/utils";
 import { HandHeart, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import VoteModal from "./modals/vote.modal";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import Fire from "./icons/fire";
-import { cn } from "@/lib/utils";
-import { GlassButton } from "./ui/glass-button";
 import BubbleIcon from "./icons/bubble";
+import Fire from "./icons/fire";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { GlassButton } from "./ui/glass-button";
+import { Input } from "./ui/input";
+import { useModal } from "@/app/(dashboard)/modal-provider";
+import { toast } from "sonner";
 
 function CreatorCard({ creator }: { creator: WeekStanding }) {
-  const [openVoteModal, setOpenVoteModal] = useState(false);
+  const { setSelectedCreator, setVoteModalOpen } = useModal();
 
-  const handleCloseVoteModal = () => {
-    setOpenVoteModal(false);
-  };
-
-  // Get the creator's initials for fallback
   const getInitials = (username: string | null) => {
     if (!username) return "??";
     return username.slice(0, 2).toUpperCase();
@@ -65,7 +60,23 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
           </div>
           {/* Right: Button with accent */}
           <div className="flex-2/5 flex justify-end">
-            <GlassButton onClick={() => setOpenVoteModal(true)} size="md">
+            <GlassButton
+              onClick={() => {
+                if (!creator.username) {
+                  toast.error("Unknown Creator");
+                  return;
+                }
+                setSelectedCreator({
+                  id: creator.creatorId,
+                  username: creator.username,
+                  avatar_url: creator.avatarUrl || "",
+                  color: "#FAD02C",
+                  created_at: new Date().toISOString(),
+                });
+                setVoteModalOpen(true);
+              }}
+              size="md"
+            >
               <div className="flex items-center gap-2">
                 <HandHeart className="size-4" />
                 Санал өгөх
@@ -84,19 +95,6 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
           )}
         </div>
       </div>
-
-      {/* Vote Modal */}
-      <VoteModal
-        isOpen={openVoteModal}
-        onClose={handleCloseVoteModal}
-        creator={{
-          id: creator.creatorId,
-          username: creator.username || "Unknown Creator",
-          avatar_url: creator.avatarUrl || "",
-          color: "#FAD02C",
-          created_at: new Date().toISOString(),
-        }}
-      />
     </div>
   );
 }
