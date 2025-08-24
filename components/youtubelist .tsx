@@ -63,6 +63,7 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
           username: "Markiplier",
           avatar_url: "https://github.com/enkhsanaa.png",
           color: "#FAD02C",
+          created_at: "2021-01-01",
         }}
       />
     </div>
