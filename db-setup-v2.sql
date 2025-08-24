@@ -953,7 +953,6 @@ $$;
 
 -- Attach BEFORE DELETE guard to every base table
 create trigger no_delete_users               before delete on public.users               for each row execute procedure public.prevent_delete();
-create trigger no_delete_user_roles          before delete on public.user_roles          for each row execute procedure public.prevent_delete();
 create trigger no_delete_role_permissions    before delete on public.role_permissions    for each row execute procedure public.prevent_delete();
 create trigger no_delete_profiles            before delete on public.profiles            for each row execute procedure public.prevent_delete();
 create trigger no_delete_chat_messages       before delete on public.chat_messages       for each row execute procedure public.prevent_delete();

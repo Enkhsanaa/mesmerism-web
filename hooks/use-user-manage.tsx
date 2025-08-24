@@ -48,9 +48,39 @@ export const useUserManage = () => {
     toast.success("Хэрэглэгчийн бан-г гаргалаа");
   };
 
+  const addRole = async (userId: string | null, role: string) => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from("user_roles")
+      .insert({
+        user_id: userId,
+        role: role,
+      })
+      .eq("user_id", userId);
+    if (error) {
+      console.error(error);
+    }
+    toast.success(`Хэрэглэгчийг ${role} болголоо`);
+  };
+
+  const removeRole = async (userId: string | null, role: string) => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", role);
+    if (error) {
+      console.error(error);
+    }
+    toast.success(`Хэрэглэгчийн ${role}-г хаслаа`);
+  };
+
   return {
     banUser,
     timeoutUser,
     unbanUser,
+    addRole,
+    removeRole,
   };
 };

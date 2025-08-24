@@ -11,6 +11,7 @@ type DbUser = {
   username: string;
   avatar_url: string;
   color: string;
+  created_at: string;
 };
 
 type WeekStanding = {
@@ -26,4 +27,14 @@ type WeekStanding = {
   profileTitle: string | null;
   avatarUrl: string | null;
   coverImageUrl: string | null;
+};
+
+type DbCompetitionWeek = {
+  id: number;
+  week_number: number;
+  title: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+  created_at: string;
 };
