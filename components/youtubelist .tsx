@@ -10,6 +10,7 @@ import { Input } from "./ui/input";
 import Fire from "./icons/fire";
 import { cn } from "@/lib/utils";
 import { GlassButton } from "./ui/glass-button";
+import BubbleIcon from "./icons/bubble";
 
 function CreatorCard({ creator }: { creator: WeekStanding }) {
   const [openVoteModal, setOpenVoteModal] = useState(false);
@@ -37,9 +38,14 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
                 <AvatarImage src={creator.avatarUrl || ""} />
                 <AvatarFallback>{getInitials(creator.username)}</AvatarFallback>
               </Avatar>
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-700 text-xs text-white px-2 py-0.5 rounded-full">
-                {creator.percent.toFixed(1)}%
-              </span>
+              {!!creator.bubbleText && (
+                <div className="absolute top-0 -translate-y-4/5 right-0 translate-x-3/4 w-[84px] h-[43px]">
+                  <BubbleIcon className="text-white w-[84px] h-[43px]" />
+                  <span className="absolute top-[14px] left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-white font-medium w-[84px] text-center overflow-hidden text-ellipsis whitespace-nowrap px-1 z-10">
+                    {creator.bubbleText}
+                  </span>
+                </div>
+              )}
             </div>
             {/* Username and progress */}
             <div className="flex-1 h-full flex gap-1 flex-col justify-between">
@@ -121,7 +127,7 @@ export default function Youtubelist() {
       ] = await Promise.all([
         supabase
           .from("profiles")
-          .select("user_id, title, avatar_url, cover_image_url")
+          .select("user_id, title, avatar_url, cover_image_url, bubble_text")
           .in("user_id", uniqCreatorIds),
         supabase.from("users").select("id, username").in("id", uniqCreatorIds),
         supabase
@@ -143,6 +149,7 @@ export default function Youtubelist() {
             title: string | null;
             avatar_url: string | null;
             cover_image_url: string | null;
+            bubble_text: string | null;
           },
         ])
       );
@@ -173,6 +180,7 @@ export default function Youtubelist() {
             creatorId: r.creator_user_id as string,
             username: usr?.username ?? null,
             profileTitle: prof?.title ?? null,
+            bubbleText: prof?.bubble_text ?? null,
             avatarUrl: prof?.avatar_url ?? null,
             coverImageUrl: prof?.cover_image_url ?? null,
           } satisfies WeekStanding;

@@ -104,6 +104,7 @@ create table public.profiles (
   user_id             uuid primary key references public.users(id),
   created_at          timestamptz not null default timezone('utc', now()),
   updated_at          timestamptz not null default timezone('utc', now()),
+  bubble_text         text,
   title               text not null,
   short_intro         text,
   description         text,
@@ -910,10 +911,48 @@ create policy "weeks.manage.weeks.manage" on public.competition_weeks
   using (public.authorize('weeks.manage', auth.uid()))
   with check (public.authorize('weeks.manage', auth.uid()));
 
+-- Create profile when creator role is added
+-- Function: when a creator role is added, ensure a profile exists
+create or replace function public.create_profile_when_creator()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_username text;
+begin
+  -- only act for the creator role
+  if NEW.role <> 'creator'::public.app_role then
+    return null;
+  end if;
+
+  -- fetch username for a sensible default title
+  select u.username into v_username
+  from public.users u
+  where u.id = NEW.user_id;
+
+  -- insert a profile if missing; RLS bypassed via SECURITY DEFINER
+  insert into public.profiles (user_id, title)
+  values (NEW.user_id, coalesce(v_username, 'Creator'))
+  on conflict (user_id) do nothing;
+
+  return null; -- AFTER trigger, we don't modify NEW
+end;
+$$;
+
+-- Trigger: fire after a creator role row is inserted
+drop trigger if exists trg_user_roles_creator_ai on public.user_roles;
+create trigger trg_user_roles_creator_ai
+after insert on public.user_roles
+for each row
+execute procedure public.create_profile_when_creator();
+
 -- WEEK PARTICIPANTS (public read; manage via weeks.manage; ensure creator role)
 create policy "participants.select.public" on public.week_participants
   for select using (true);
 
+-- Only creators can be added to a week
 create policy "participants.manage.weeks.manage" on public.week_participants
   for all
   using (public.authorize('weeks.manage', auth.uid()))

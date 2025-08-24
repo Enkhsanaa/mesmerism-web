@@ -25,6 +25,7 @@ type WeekStanding = {
   creatorId: string; // uuid
   username: string | null;
   profileTitle: string | null;
+  bubbleText: string | null;
   avatarUrl: string | null;
   coverImageUrl: string | null;
 };
