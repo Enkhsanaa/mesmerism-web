@@ -162,7 +162,6 @@ export default function Prize() {
             style={{ color: "#B3CDA8" }}
           >
             <p>Deadline: {getTimeRemaining(activeWeekData?.ends_at || null)}</p>
-            <p>{currentWeekId}</p>
           </div>
         </div>
       </div>

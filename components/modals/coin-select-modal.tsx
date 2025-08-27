@@ -274,7 +274,7 @@ export default function CoinSelectModal() {
                     className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
                     onClick={() => handleCheckout(selectedCoins ?? 0)}
                   >
-                    {isWaitingPayment ? "Боловсруулж байна..." : "Төлбөр төлөх"}
+                    {isWaitingPayment ? "Хүлээж байна..." : "Төлбөр төлөх"}
                   </Button>
                 </>
               )}
