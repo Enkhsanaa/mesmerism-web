@@ -11,10 +11,8 @@ import type {
 // Event types for the website
 export type WebsiteEvent =
   | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
-  | { type: "broadcast"; event: "PAYMENT_RECEIVED"; payload: any }
+  | { type: "broadcast"; event: "PAYMENT_CONFIRMED"; payload: any }
   | { type: "broadcast"; event: "VOTE_CREATOR"; payload: any }
-  | { type: "broadcast"; event: "PAYMENT_RECEIVED"; payload: any }
-  | { type: "broadcast"; event: "VOTE_CREATED"; payload: any }
   | {
       type: "broadcast";
       event: "USER_SUSPENSION";
@@ -36,6 +34,7 @@ interface RealtimeContextType {
   isConnected: boolean;
 
   setCurrentWeekId: (weekId: number) => void;
+  refreshUserBalance: () => void;
   subscribe: (
     eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
@@ -161,10 +160,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           .from("user_coin_balances")
           .select("*")
           .eq("user_id", session.data.session?.user.id)
-          .maybeSingle();
+          .maybeSingle<{ balance: number }>();
         console.log("userBalance", userBalance);
         if (userBalance) {
-          setUserBalance(userBalance.coins);
+          setUserBalance(userBalance.balance);
         }
 
         const { data: currentWeekId } = await supabase
@@ -243,6 +242,48 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase]);
 
+  const refreshUserBalance = async () => {
+    if (!user) return;
+    const { data: userBalance } = await supabase
+      .from("user_coin_balances")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (userBalance) {
+      setUserBalance(userBalance.balance);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      refreshUserBalance();
+    }
+  }, [user]);
+
+  // Separate useEffect to handle balance updates from realtime events
+  useEffect(() => {
+    if (!user) return;
+
+    const handlePaymentConfirmed = (payload: any) => {
+      if (payload.user_id === user.id) {
+        console.log(
+          "Updating userBalance in realtime provider (payment):",
+          payload.new_balance
+        );
+        setUserBalance(payload.new_balance || 0);
+      }
+    };
+
+    const unsubscribePayment = subscribe(
+      "PAYMENT_CONFIRMED",
+      handlePaymentConfirmed
+    );
+
+    return () => {
+      unsubscribePayment();
+    };
+  }, [user, subscribe, supabase]);
+
   const contextValue: RealtimeContextType = useMemo(
     () => ({
       supabase,
@@ -254,10 +295,24 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       isConnected,
 
       setCurrentWeekId,
+      refreshUserBalance,
       subscribe,
       unsubscribe,
     }),
-    [isConnected]
+    [
+      supabase,
+      user,
+      userBalance,
+      userRole,
+      userSuspension,
+      currentWeekId,
+      isConnected,
+
+      setCurrentWeekId,
+      refreshUserBalance,
+      subscribe,
+      unsubscribe,
+    ]
   );
 
   return (

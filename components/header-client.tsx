@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { createClient } from "@/lib/supabase/client";
+import { formatAmount } from "@/lib/utils";
+import { ChevronDown, Plus, Settings } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import CoinIcon from "./icons/coin";
 import MesmerismIcon from "./icons/mesmerism";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { formatAmount } from "@/lib/utils";
-import Link from "next/link";
-import { GlassButton } from "./ui/glass-button";
-import { Plus } from "lucide-react";
-import { useModal } from "@/app/(dashboard)/modal-provider";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "./ui/context-menu";
 
 interface User {
   id: string;
@@ -23,10 +28,9 @@ interface User {
 export default function HeaderClient() {
   const { setCoinModalOpen } = useModal();
   const [user, setUser] = useState<User | null>(null);
-  const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
-  const { subscribe, unsubscribe } = useRealtime();
+  const { userRole, userBalance } = useRealtime();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -59,17 +63,17 @@ export default function HeaderClient() {
         }
 
         // Get user balance
-        const { data: balanceData, error: balanceError } = await supabase
-          .from("user_coin_balances")
-          .select("balance")
-          .eq("user_id", supabaseUser.id)
-          .single();
+        // const { data: balanceData, error: balanceError } = await supabase
+        //   .from("user_coin_balances")
+        //   .select("balance")
+        //   .eq("user_id", supabaseUser.id)
+        //   .single();
 
-        if (balanceError) {
-          console.error("Error loading user balance:", balanceError);
-        } else if (balanceData) {
-          setBalance(balanceData.balance || 0);
-        }
+        // if (balanceError) {
+        //   console.error("Error loading user balance:", balanceError);
+        // } else if (balanceData) {
+        //   setBalance(balanceData.balance || 0);
+        // }
       } catch (error) {
         console.error("Error loading user data:", error);
       } finally {
@@ -87,7 +91,6 @@ export default function HeaderClient() {
         loadUserData();
       } else if (event === "SIGNED_OUT") {
         setUser(null);
-        setBalance(0);
       }
     });
 
@@ -95,28 +98,6 @@ export default function HeaderClient() {
       subscription.unsubscribe();
     };
   }, [supabase]);
-
-  // Listen for realtime payment events to update balance
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const handlePaymentReceived = (payload: any) => {
-      console.log("Payment received in header:", payload);
-      // Update balance if the payment is for the current user
-      if (payload.user_id === user.id) {
-        setBalance((prevBalance) => prevBalance + (payload.amount || 0));
-      }
-    };
-
-    const unsubscribePayment = subscribe(
-      "PAYMENT_RECEIVED",
-      handlePaymentReceived
-    );
-
-    return () => {
-      unsubscribePayment();
-    };
-  }, [subscribe, unsubscribe, user?.id]);
 
   return (
     <header className="bg-dark-background">
@@ -131,7 +112,41 @@ export default function HeaderClient() {
           </a>
           <Badge variant="secondary">beta</Badge>
         </div>
-        <div className="flex gap-x-4">
+        <div className="flex gap-x-4 items-center">
+          {/* Admin Menu */}
+          {userRole === "admin" && (
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/10"
+                >
+                  <Settings className="size-4 mr-2" />
+                  Admin
+                  <ChevronDown className="size-3 ml-1" />
+                </Button>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="bg-[#2B2D31] border-[#404249]">
+                <Link href="/users">
+                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
+                    User Management
+                  </ContextMenuItem>
+                </Link>
+                <Link href="/weeks">
+                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
+                    Week Management
+                  </ContextMenuItem>
+                </Link>
+                <Link href="/topups">
+                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
+                    Topup Management
+                  </ContextMenuItem>
+                </Link>
+              </ContextMenuContent>
+            </ContextMenu>
+          )}
+
           <div className="relative isolate h-9">
             <div className="absolute top-1/2 -translate-y-1/2 left-0 -translate-x-1/2 z-50 bg-[#FAD02C] rounded-full text-black p-1">
               <Plus className="size-4" />
@@ -143,7 +158,7 @@ export default function HeaderClient() {
               onClick={() => setCoinModalOpen(true)}
             >
               <CoinIcon className="size-6" />
-              {formatAmount(balance)}
+              {formatAmount(userBalance ?? 0)}
             </Button>
           </div>
           <Link href="/profile">

@@ -14,20 +14,66 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { useModal } from "@/app/(dashboard)/modal-provider";
+import { toast } from "sonner";
+import { formatAmount } from "@/lib/utils";
 
 export default function VoteModal() {
   const { voteModalOpen, setVoteModalOpen, selectedCreator, setCoinModalOpen } =
     useModal();
-  const { userBalance } = useRealtime();
+  const { userBalance, supabase, currentWeekId, refreshUserBalance } =
+    useRealtime();
   const [selectedCoins, setSelectedCoins] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!voteModalOpen) return null;
 
-  const handleVote = (value: number) => {
-    // Handle vote submission here
-    console.log(`Voted ${value} for ${selectedCreator?.username || "Unknown"}`);
-    // onVote?.(value);
-    setVoteModalOpen(false);
+  const handleVote = async () => {
+    if (!selectedCreator || !currentWeekId || selectedCoins <= 0) {
+      toast.error("Invalid vote data");
+      return;
+    }
+
+    if (selectedCoins > (userBalance ?? 0)) {
+      toast.error("Insufficient balance");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Calculate votes from coins (assuming 1 coin = 1 vote, but check actual rate)
+      const votes = selectedCoins; // This might need adjustment based on coins_per_vote rate
+
+      const { data, error } = await supabase.rpc("purchase_votes", {
+        p_creator_id: selectedCreator.id,
+        p_week_id: currentWeekId,
+        p_votes: votes,
+      });
+
+      if (error) {
+        console.error("Vote purchase error:", error);
+        if (error.message.includes("INSUFFICIENT_FUNDS")) {
+          toast.error("Insufficient funds");
+        } else if (error.message.includes("not currently open")) {
+          toast.error("Voting is not currently open for this week");
+        } else if (error.message.includes("not a participant")) {
+          toast.error("Creator is not participating in this week");
+        } else {
+          toast.error("Failed to submit vote: " + error.message);
+        }
+        return;
+      }
+
+      toast.success(`Таны ${votes} саналыг амжилттай хүлээж авлаа!`);
+      setVoteModalOpen(false);
+      setSelectedCoins(0);
+      refreshUserBalance();
+    } catch (error) {
+      console.error("Vote submission error:", error);
+      toast.error("Failed to submit vote");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleMaxCoins = () => {
@@ -111,18 +157,18 @@ export default function VoteModal() {
               {/* Use max coins button */}
               <Button
                 onClick={handleMaxCoins}
-                className="w-full bg-[#34373C] text-white rounded-[20px] h-[40px] max-w-[116px]"
+                className="w-full bg-[#34373C] hover:bg-accent active:bg-accent text-white rounded-[20px] h-[40px] max-w-[116px]"
               >
                 Use max coin
               </Button>
 
               {/* Coin info */}
               <div className="flex flex-row items-center justify-between w-full bg-[#34373C] rounded-[24px] p-[24px]">
-                <div className="flex flex-row items-start justify-start gap-4 flex-wrap">
+                <div className="flex flex-row items-center justify-start gap-4 flex-wrap">
                   <p className="text-white font-semibold text-sm">Боломжтой:</p>
                   <div className="flex items-center gap-[4px]">
                     <span className="text-white font-semibold text-sm">
-                      {userBalance}
+                      {formatAmount(userBalance ?? 0)}
                     </span>
                     <CoinIcon className="size-6 text-[#FAD02C]" />
                   </div>
@@ -145,11 +191,14 @@ export default function VoteModal() {
               </Button>
               <Button
                 disabled={
-                  selectedCoins <= 0 || selectedCoins > (userBalance ?? 0)
+                  selectedCoins <= 0 ||
+                  selectedCoins > (userBalance ?? 0) ||
+                  isSubmitting
                 }
+                onClick={handleVote}
                 className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
               >
-                Санал өгөх
+                {isSubmitting ? "Илгээж байна..." : "Санал өгөх"}
               </Button>
             </CardFooter>
           </Card>

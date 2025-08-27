@@ -14,6 +14,12 @@ type DbUser = {
   created_at: string;
 };
 
+type LeaderboardEntry = {
+  creator_user_id: string;
+  percent: number;
+  rank: number;
+};
+
 type WeekStanding = {
   weekId: number;
   weekNumber: number | null;

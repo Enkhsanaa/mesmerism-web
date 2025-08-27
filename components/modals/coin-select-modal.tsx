@@ -2,7 +2,8 @@
 import { useModal } from "@/app/(dashboard)/modal-provider";
 import { cn, formatAmount } from "@/lib/utils";
 import { CheckIcon, ChevronDown, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import CoinIcon from "../icons/coin";
 import Loader from "../icons/loader";
 import { Button } from "../ui/button";
@@ -73,11 +74,53 @@ const CoinOption = ({
 };
 
 export default function CoinSelectModal() {
-  const { supabase, user } = useRealtime();
+  const { supabase, user, subscribe, unsubscribe } = useRealtime();
   const { coinModalOpen, setCoinModalOpen } = useModal();
   const [isWaitingPayment, setIsWaitingPayment] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [confirmedAmount, setConfirmedAmount] = useState(0);
 
   const [selectedCoins, setSelectedCoins] = useState(0);
+
+  // Listen for payment confirmation events
+  useEffect(() => {
+    if (!coinModalOpen || !user) return;
+
+    const handlePaymentConfirmed = (payload: any) => {
+      // Only handle events for this user
+      if (payload.user_id === user.id) {
+        setIsWaitingPayment(false);
+        setPaymentSuccess(true);
+        setConfirmedAmount(payload.amount);
+
+        // Auto-close modal after 3 seconds
+        // setTimeout(() => {
+        //   setPaymentSuccess(false);
+        //   setCoinModalOpen(false);
+        //   setSelectedCoins(0);
+        // }, 3000);
+      }
+    };
+
+    const unsubscribePayment = subscribe(
+      "PAYMENT_CONFIRMED",
+      handlePaymentConfirmed
+    );
+
+    return () => {
+      unsubscribePayment();
+    };
+  }, [coinModalOpen, user, subscribe, unsubscribe, setCoinModalOpen]);
+
+  // Reset states when modal opens/closes
+  useEffect(() => {
+    if (!coinModalOpen) {
+      setIsWaitingPayment(false);
+      setPaymentSuccess(false);
+      setConfirmedAmount(0);
+      setSelectedCoins(0);
+    }
+  }, [coinModalOpen]);
 
   if (!coinModalOpen) return null;
 
@@ -126,21 +169,40 @@ export default function CoinSelectModal() {
                   <X className="h-[20px] w-[20px]" />
                 </Button>
               </div>
-              <p className="text-base font-normaltext-white">
-                Та Coin худалдаж авах хэмжээгээ оруулж үргэлжлүүлнэ үү.
-              </p>
+              {!paymentSuccess && (
+                <p className="text-base font-normaltext-white">
+                  Та Coin худалдаж авах хэмжээгээ оруулж үргэлжлүүлнэ үү.
+                </p>
+              )}
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center gap-4">
               {/* Coin selection */}
-              {isWaitingPayment ? (
-                <>
-                  <div className="flex flex-col items-center justify-center gap-4">
-                    <Loader color="white" />
-                    <p className="text-base font-normaltext-white">
-                      Төлбөр баталгаажихыг хүлээж байна.
+              {paymentSuccess ? (
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="size-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckIcon className="size-8 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-white mb-2">
+                      Төлбөр баталгаажлаа!
+                    </p>
+                    <p className="text-base text-white flex items-center justify-center gap-2">
+                      {formatAmount(confirmedAmount)}{" "}
+                      <CoinIcon className="size-5 text-[#FAD02C]" /> таны данс
+                      руу нэмэгдлээ.
+                    </p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Та өөрийн дэмжиж буй Youtuber дээ саналаа өгөөрэй
                     </p>
                   </div>
-                </>
+                </div>
+              ) : isWaitingPayment ? (
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <Loader color="white" />
+                  <p className="text-base font-normaltext-white">
+                    Төлбөр баталгаажихыг хүлээж байна.
+                  </p>
+                </div>
               ) : (
                 <div className="grid w-full">
                   {COIN_OPTIONS.map((option) => (
@@ -186,20 +248,36 @@ export default function CoinSelectModal() {
               )}
             </CardContent>
             <CardFooter className="flex flex-row items-center justify-between gap-2">
-              <Button
-                variant="ghost"
-                className="w-[89px]"
-                onClick={() => setCoinModalOpen(false)}
-              >
-                Болих
-              </Button>
-              <Button
-                disabled={selectedCoins <= 0 || isWaitingPayment}
-                className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
-                onClick={() => handleCheckout(selectedCoins ?? 0)}
-              >
-                Төлбөр төлөх
-              </Button>
+              {paymentSuccess ? (
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    setPaymentSuccess(false);
+                    setCoinModalOpen(false);
+                    setSelectedCoins(0);
+                  }}
+                >
+                  Хаах
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="w-[89px]"
+                    onClick={() => setCoinModalOpen(false)}
+                    disabled={isWaitingPayment}
+                  >
+                    Болих
+                  </Button>
+                  <Button
+                    disabled={selectedCoins <= 0 || isWaitingPayment}
+                    className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
+                    onClick={() => handleCheckout(selectedCoins ?? 0)}
+                  >
+                    {isWaitingPayment ? "Боловсруулж байна..." : "Төлбөр төлөх"}
+                  </Button>
+                </>
+              )}
             </CardFooter>
           </Card>
         </div>

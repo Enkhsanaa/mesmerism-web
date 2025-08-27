@@ -1,16 +1,16 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useModal } from "@/app/(dashboard)/modal-provider";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import { HandHeart, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import BubbleIcon from "./icons/bubble";
 import Fire from "./icons/fire";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { GlassButton } from "./ui/glass-button";
 import { Input } from "./ui/input";
-import { useModal } from "@/app/(dashboard)/modal-provider";
-import { toast } from "sonner";
 
 function CreatorCard({ creator }: { creator: WeekStanding }) {
   const { setSelectedCreator, setVoteModalOpen } = useModal();
@@ -21,12 +21,37 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
   };
 
   return (
-    <div>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{
+        layout: {
+          duration: 0.6,
+          ease: [0.25, 0.46, 0.45, 0.94],
+        },
+        opacity: { duration: 0.3 },
+        y: { duration: 0.3 },
+      }}
+    >
       <div className="flex flex-col justify-center w-full rounded-3xl">
-        <div className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6 isolate">
+        <motion.div
+          className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6 isolate"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
           <div className="flex items-center flex-3/5">
             {/* Left: Rank */}
-            <span className="text-white text-base mr-4">{creator.rank}</span>
+            <motion.span
+              className="text-white text-base mr-4"
+              key={creator.rank}
+              initial={{ scale: 1.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {creator.rank}
+            </motion.span>
             {/* Avatar with badge */}
             <div className="relative mr-4">
               <Avatar className="size-12 border-yellow-300 border-2">
@@ -44,18 +69,29 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
             </div>
             {/* Username and progress */}
             <div className="flex-1 h-full flex gap-1 flex-col justify-between">
-              <div className="text-white font-semibold">
+              <motion.div className="text-white font-semibold" layout>
                 {creator.profileTitle || creator.username || "Unknown Creator"}
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-1">
-                <div
+              </motion.div>
+              <div className="w-full bg-gray-800 rounded-full h-1 overflow-hidden">
+                <motion.div
                   className="bg-yellow-300 h-1 rounded-full"
-                  style={{ width: `${Math.min(creator.percent, 100)}%` }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(creator.percent, 100)}%` }}
+                  transition={{
+                    duration: 0.8,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                  }}
                 />
               </div>
-              <div className="text-white text-sm">
+              <motion.div
+                className="text-white text-sm"
+                key={creator.percent.toFixed(2)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
                 {creator.percent.toFixed(2)}%
-              </div>
+              </motion.div>
             </div>
           </div>
           {/* Right: Button with accent */}
@@ -93,6 +129,34 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
               )}
             />
           )}
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Loading skeleton component
+function CreatorCardSkeleton() {
+  return (
+    <div className="flex flex-col justify-center w-full rounded-3xl">
+      <div className="mx-auto relative flex items-center bg-dark-background w-full h-[100px] rounded-3xl px-6 animate-pulse">
+        <div className="flex items-center flex-3/5">
+          {/* Rank skeleton */}
+          <div className="w-4 h-4 bg-gray-600 rounded mr-4"></div>
+          {/* Avatar skeleton */}
+          <div className="size-12 bg-gray-600 rounded-full mr-4 border-2 border-gray-500"></div>
+          {/* Username and progress skeleton */}
+          <div className="flex-1 h-full flex gap-1 flex-col justify-between">
+            <div className="w-32 h-4 bg-gray-600 rounded"></div>
+            <div className="w-full bg-gray-800 rounded-full h-1">
+              <div className="bg-gray-600 h-1 rounded-full w-1/3"></div>
+            </div>
+            <div className="w-12 h-3 bg-gray-600 rounded"></div>
+          </div>
+        </div>
+        {/* Button skeleton */}
+        <div className="flex-2/5 flex justify-end">
+          <div className="w-24 h-8 bg-gray-600 rounded-lg"></div>
         </div>
       </div>
     </div>
@@ -100,99 +164,22 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
 }
 
 export default function Youtubelist() {
-  const [creators, setCreators] = useState<WeekStanding[]>([]);
-  const { supabase, currentWeekId } = useRealtime();
-
-  useEffect(() => {
-    const setupLeaderboard = async () => {
-      // 1) call the security-definer function for the week
-      const { data: leaderboard, error: lbErr } = await supabase.rpc(
-        "get_week_leaderboard_cached",
-        { p_week_id: currentWeekId }
-      );
-
-      if (lbErr) throw lbErr;
-
-      // 2) fetch public profile/user fields for those creators (optional)
-      const creatorIds = leaderboard.map((r: any) => r.creator_user_id);
-      const uniqCreatorIds = Array.from(new Set(creatorIds));
-      if (uniqCreatorIds.length === 0) return [];
-
-      const [
-        { data: profiles, error: pErr },
-        { data: users, error: uErr },
-        { data: wk, error: wErr },
-      ] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("user_id, title, avatar_url, cover_image_url, bubble_text")
-          .in("user_id", uniqCreatorIds),
-        supabase.from("users").select("id, username").in("id", uniqCreatorIds),
-        supabase
-          .from("competition_weeks")
-          .select("id, week_number, title")
-          .eq("id", currentWeekId)
-          .maybeSingle(),
-      ]);
-
-      if (pErr) throw pErr;
-      if (uErr) throw uErr;
-      if (wErr) throw wErr;
-
-      const profileById = new Map(
-        (profiles ?? []).map((p) => [
-          p.user_id as string,
-          p as {
-            user_id: string;
-            title: string | null;
-            avatar_url: string | null;
-            cover_image_url: string | null;
-            bubble_text: string | null;
-          },
-        ])
-      );
-      const userById = new Map(
-        (users ?? []).map((u) => [
-          u.id as string,
-          u as { id: string; username: string | null },
-        ])
-      );
-
-      const weekNumber = wk?.week_number ?? null;
-      const weekTitle =
-        wk?.title ?? (weekNumber != null ? `Week ${weekNumber}` : null);
-
-      // 2c) Build typed rows
-      const rows: WeekStanding[] = (leaderboard ?? [])
-        .map((r: any) => {
-          const prof = profileById.get(r.creator_user_id);
-          const usr = userById.get(r.creator_user_id);
-          return {
-            weekId: r.week_id as number,
-            weekNumber,
-            weekTitle,
-
-            rank: r.rank as number,
-            percent: Number(r.percent), // numeric -> number
-
-            creatorId: r.creator_user_id as string,
-            username: usr?.username ?? null,
-            profileTitle: prof?.title ?? null,
-            bubbleText: prof?.bubble_text ?? null,
-            avatarUrl: prof?.avatar_url ?? null,
-            coverImageUrl: prof?.cover_image_url ?? null,
-          } satisfies WeekStanding;
-        })
-        .sort((a: WeekStanding, b: WeekStanding) => a.rank - b.rank);
-
-      setCreators(rows);
-    };
-    setupLeaderboard();
-  }, [currentWeekId]);
+  const { isLoading, creators } = useLeaderboard();
+  console.log("rerendering");
 
   return (
-    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8">
-      <div className="relative w-full m-0 p-0">
+    <motion.div
+      className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <motion.div
+        className="relative w-full m-0 p-0"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#DCDDDE] w-5 h-5" />
         <Input
           type="text"
@@ -201,12 +188,57 @@ export default function Youtubelist() {
           defaultValue={""}
           className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
         />
-      </div>
-      <div className="grid gap-4">
-        {creators.map((creator) => (
-          <CreatorCard key={creator.creatorId} creator={creator} />
-        ))}
-      </div>
-    </div>
+      </motion.div>
+
+      <motion.div className="grid gap-4" layout>
+        <AnimatePresence mode="popLayout">
+          {isLoading ? (
+            // Show skeleton loaders while loading
+            Array.from({ length: 4 }).map((_, index) => (
+              <motion.div
+                key={`skeleton-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  duration: 0.3,
+                  delay: index * 0.1,
+                }}
+              >
+                <CreatorCardSkeleton />
+              </motion.div>
+            ))
+          ) : creators.length > 0 ? (
+            // Show actual creators when loaded
+            creators.map((creator, index) => (
+              <motion.div
+                key={creator.creatorId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  duration: 0.4,
+                  delay: index * 0.1,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                <CreatorCard creator={creator} />
+              </motion.div>
+            ))
+          ) : (
+            // Show empty state when no creators found
+            <motion.div
+              className="text-center py-12 text-gray-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <p>Энэ 7 хоногт өрсөлдөх Youtuber-үүд сонгогдоогүй байна</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
   );
 }

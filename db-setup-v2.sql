@@ -360,12 +360,94 @@ create index if not exists chat_messages_author_idx
   on public.chat_messages (author_user_id, created_at desc);
 
 -- -----------------------
+-- VOTES: Settings, Orders (coins -> votes)
+-- -----------------------
+create table public.app_settings (
+  key text primary key,
+  int_value integer,
+  text_value text,
+  json_value jsonb
+);
+
+-- Public, read-only view for safe config exposure (optional)
+create or replace view public.app_public_settings as
+select key, int_value, text_value, json_value
+from public.app_settings
+where key in ('coins_per_vote', 'vote_min_amount', 'vote_max_amount', 'coin_price');
+
+-- Definer-secure getter so callers don’t need direct table rights
+create or replace function public.coins_per_vote()
+returns integer
+stable
+security definer
+set search_path = ''
+language sql
+as $$
+  select coalesce(
+    (select int_value from public.app_settings where key = 'coins_per_vote'),
+    1
+  );
+$$;
+
+create or replace function public.vote_min_amount()
+returns integer
+stable
+security definer
+set search_path = ''
+language sql
+as $$
+  select coalesce(
+    (select int_value from public.app_settings where key = 'vote_min_amount'),
+    1
+  );
+$$;
+
+create or replace function public.vote_max_amount()
+returns integer
+stable
+security definer
+set search_path = ''
+language sql
+as $$
+  select coalesce(
+    (select int_value from public.app_settings where key = 'vote_max_amount'),
+    10000
+  );
+$$;
+
+create or replace function public.coin_price()
+returns integer
+stable
+security definer
+set search_path = ''
+language sql
+as $$
+  select coalesce(
+    (select int_value from public.app_settings where key = 'coin_price'),
+    500
+  );
+$$;
+
+insert into public.app_settings (key, int_value) values ('coins_per_vote', 1)
+on conflict (key) do nothing;
+
+insert into public.app_settings (key, int_value) values ('vote_min_amount', 1)
+on conflict (key) do nothing;
+
+insert into public.app_settings (key, int_value) values ('vote_max_amount', 10000)
+on conflict (key) do nothing;
+
+insert into public.app_settings (key, int_value) values ('coin_price', 500)
+on conflict (key) do nothing;
+
+-- -----------------------
 -- COINS: Top-ups & Ledger
 -- -----------------------
 create table public.coin_topups (
   id            bigserial primary key,
   user_id       uuid not null references public.users(id),
   amount        bigint not null check (amount > 0),
+  price         bigint not null check (price > 0),
   status        public.topup_status not null default 'pending',
   provider      text,
   provider_ref  text,
@@ -406,21 +488,70 @@ create unique index coin_ledger_one_per_topup
   where ref_topup_id is not null;
 create index coin_ledger_voteorder_idx on public.coin_ledger (ref_vote_order_id);
 
--- credit coins when a topup is confirmed
-create or replace function public.credit_coins_on_topup()
+-- calculate and set the cost of coins before inserting into coin_ledger
+create or replace function public.set_coin_price()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_cost bigint;
 begin
-  if new.status = 'confirmed' and (old.status is distinct from 'confirmed') then
-    insert into public.coin_ledger (user_id, delta, reason, ref_topup_id)
-    values (new.user_id, new.amount, 'topup', new.id)
-    on conflict (ref_topup_id) do nothing;
-  end if;
+  select public.coin_price() * new.amount into v_cost;
+  new.price := v_cost;
   return new;
 end;
+$$;
+
+create trigger trg_coin_topups_set_price
+before insert on public.coin_topups
+for each row execute procedure public.set_coin_price();
+
+-- credit coins when a topup is confirmed
+CREATE OR REPLACE FUNCTION public.credit_coins_on_topup()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_new_balance bigint;
+BEGIN
+  IF new.status = 'confirmed' AND (old.status IS DISTINCT FROM 'confirmed') THEN
+    -- Check if a ledger entry already exists for this topup
+    IF NOT EXISTS (
+      SELECT 1 FROM public.coin_ledger 
+      WHERE ref_topup_id = new.id
+    ) THEN
+      -- Insert the credit entry
+      INSERT INTO public.coin_ledger (user_id, delta, reason, ref_topup_id)
+      VALUES (new.user_id, new.amount, 'topup', new.id);
+      
+      -- Get the user's new balance
+      SELECT COALESCE(SUM(delta), 0) INTO v_new_balance
+      FROM public.coin_ledger
+      WHERE user_id = new.user_id;
+      
+      -- Broadcast the payment confirmation event
+      perform realtime.send(
+        jsonb_build_object(
+          'user_id', new.user_id,
+          'topup_id', new.id,
+          'amount', new.amount,
+          'new_balance', v_new_balance,
+          'provider', new.provider,
+          'provider_ref', new.provider_ref,
+          'confirmed_at', NOW()
+        ),
+        'PAYMENT_CONFIRMED',
+        'LIVE_EVENTS',
+        false
+      );
+    END IF;
+  END IF;
+  RETURN new;
+END;
 $$;
 
 create trigger trg_topup_confirm_credit
@@ -458,39 +589,6 @@ create table public.week_participants (
 );
 
 create index vote_orders_week_creator_idx on public.week_participants (week_id, creator_user_id);
-
--- -----------------------
--- VOTES: Settings, Orders (coins -> votes)
--- -----------------------
-create table public.app_settings (
-  key text primary key,
-  int_value integer,
-  text_value text,
-  json_value jsonb
-);
-
--- Public, read-only view for safe config exposure (optional)
-create or replace view public.app_public_settings as
-select key, int_value, text_value, json_value
-from public.app_settings
-where key in ('coins_per_vote');
-
--- Definer-secure getter so callers don’t need direct table rights
-create or replace function public.coins_per_vote()
-returns integer
-stable
-security definer
-set search_path = ''
-language sql
-as $$
-  select coalesce(
-    (select int_value from public.app_settings where key = 'coins_per_vote'),
-    1
-  );
-$$;
-
-insert into public.app_settings (key, int_value) values ('coins_per_vote', 500)
-on conflict (key) do nothing;
 
 create table public.vote_orders (
   id               bigserial primary key,
@@ -566,6 +664,11 @@ begin
   -- Per-user advisory lock (hash UUID -> bigint)
   select ('x'||substr(md5(v_user::text),1,16))::bit(64)::bigint into v_lock_key;
   perform pg_advisory_xact_lock(v_lock_key);
+
+  -- Check if votes are within the allowed range
+  if p_votes < public.vote_min_amount() or p_votes > public.vote_max_amount() then
+    raise exception 'VOTES_OUT_OF_RANGE: votes must be between % and %', public.vote_min_amount(), public.vote_max_amount();
+  end if;
 
   -- Cost = votes * coins_per_vote()
   select public.coins_per_vote() into v_rate;
@@ -746,6 +849,56 @@ as $$
   where not exists (select 1 from mv)
   order by rank;
 $$;
+
+
+
+-- Function: after a vote -> broadcast full leaderboard for that week
+create or replace function public.vote_orders_after_insert_full_board()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_leaderboard jsonb;
+begin
+  -- Build the full leaderboard from the live function (no raw counts exposed)
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'creator_user_id', creator_user_id,
+        'percent',         percent,
+        'rank',            rank
+      )
+      order by rank
+    ),
+    '[]'::jsonb
+  )
+  into v_leaderboard
+  from public.get_week_leaderboard_public(new.week_id);
+
+  -- Broadcast one event with the whole board
+  perform realtime.send(
+    jsonb_build_object(
+      'week_id',     new.week_id,
+      'created_at',  new.created_at,
+      'creator_user_id',new.creator_user_id,
+      'leaderboard', v_leaderboard
+    ),
+    'VOTE_CREATOR',
+    'LIVE_EVENTS',
+    false
+  );
+
+  return null; -- AFTER trigger
+end;
+$$;
+
+-- AFTER INSERT trigger (alphabetically after your bump trigger)
+drop trigger if exists trg_vote_orders_z_after_insert_full_board on public.vote_orders;
+create trigger trg_vote_orders_z_after_insert_full_board
+after insert on public.vote_orders
+for each row execute procedure public.vote_orders_after_insert_full_board();
 
 -- -----------------------
 -- RLS: Enable & Policies (refactored to use authorize() where appropriate)
