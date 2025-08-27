@@ -82,7 +82,12 @@ export default function Login() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => {
+                  if (typeof navigator.vibrate === "function") {
+                    navigator.vibrate(200);
+                  }
+                  setShowPassword(!showPassword);
+                }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#DCDDDE] hover:text-gray-300"
                 tabIndex={-1}
               >

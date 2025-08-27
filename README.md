@@ -1,24 +1,60 @@
 # Mesmerism Web
 
-A modern web application built with Next.js 15, featuring a sleek UI with authentication, coin system, and responsive design.
+A competitive YouTube creator voting platform built with Next.js 15, featuring real-time competitions, coin-based voting system, and live chat functionality.
 
-## Features
+## Overview
 
-- **Next.js 15** with App Router and Turbopack
-- **Modern UI** with Radix UI components and Tailwind CSS
-- **Authentication** system with login and register pages
-- **Coin System** with user balance display
-- **Responsive Design** optimized for all devices
-- **TypeScript** for type safety and better development experience
+Mesmerism is a social media influencer competition platform where users support their favorite YouTube creators through a coin-based voting system during weekly competitions. The platform features a 15,000,000 cash prize pool and real-time leaderboards with gaming-inspired UI elements.
+
+## Key Features
+
+### 🏆 Competition System
+
+- **Weekly Competitions**: 4-week competition cycles with real-time leaderboards
+- **Creator Rankings**: Live percentage-based rankings with visual fire effects for top performers
+- **Prize Pool**: 15,000,000 cash prize distribution system
+- **Participant Management**: Admin tools for managing competition participants
+
+### 💰 Coin Economy
+
+- **Digital Currency**: Coin-based voting system with real money purchases
+- **Payment Integration**: Secure coin topup system with transaction tracking
+- **Vote Purchasing**: Users spend coins to vote for their favorite creators
+- **Balance Management**: Real-time coin balance display and transaction history
+
+### 👥 User Management
+
+- **Role-Based Access**: Admin, Moderator, and Creator roles with specific permissions
+- **Creator Profiles**: Comprehensive profiles with social links, descriptions, and subscriber counts
+- **User Moderation**: Advanced suspension and ban management system
+- **Authentication**: Secure login/register system with Supabase
+
+### 💬 Real-time Communication
+
+- **Live Chat**: Real-time chat system with mobile-responsive design
+- **Event Broadcasting**: Live updates for votes, payments, and user activities
+- **System Announcements**: Platform-wide messaging capability
+- **Mobile Chat**: Floating action button with unread message notifications
+
+### 🛠️ Admin Dashboard
+
+- **Week Management**: Create and manage competition weeks
+- **User Administration**: Comprehensive user management with search and pagination
+- **Transaction Monitoring**: View user transactions and voting history
+- **Moderation Tools**: Role assignment, user suspension, and ban management
 
 ## Tech Stack
 
-- **Framework**: Next.js 15.4.5
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **UI Components**: Radix UI
-- **Icons**: Lucide React
-- **Build Tool**: Turbopack
+- **Framework**: Next.js 15.4.5 with App Router and Turbopack
+- **Language**: TypeScript for type safety
+- **Database**: PostgreSQL with Supabase and Drizzle ORM
+- **Styling**: Tailwind CSS v4 with custom design system
+- **UI Components**: Radix UI for accessible components
+- **Icons**: Lucide React and custom SVG icons
+- **Real-time**: Supabase real-time subscriptions
+- **Authentication**: Supabase Auth with custom user management
+- **State Management**: SWR for data fetching and caching
+- **Animations**: Framer Motion and Lottie React
 
 ## Getting Started
 
@@ -67,17 +103,31 @@ bun dev
 ```
 mesmerism-web/
 ├── app/                    # Next.js App Router pages
+│   ├── (dashboard)/       # Protected dashboard routes
+│   │   ├── users/         # User management
+│   │   ├── weeks/         # Competition week management
+│   │   └── profile/       # User profile management
 │   ├── auth/              # Authentication pages
-│   │   ├── login/
-│   │   └── register/
-│   ├── globals.css        # Global styles
-│   └── layout.tsx         # Root layout
+│   │   ├── login/         # Login page and actions
+│   │   └── register/      # Registration page and actions
+│   ├── api/               # API routes
+│   │   ├── coins/         # Coin balance endpoints
+│   │   └── user/          # User data endpoints
+│   └── globals.css        # Global styles
 ├── components/            # Reusable components
-│   ├── ui/               # UI components (buttons, dialogs, etc.)
-│   ├── icons/            # Custom icons
-│   └── header.tsx        # Main header component
-├── lib/                  # Utility functions
-└── public/              # Static assets
+│   ├── ui/               # Base UI components (buttons, dialogs, etc.)
+│   ├── icons/            # Custom SVG icons and animations
+│   ├── modals/           # Modal components for various features
+│   ├── livechat.tsx      # Real-time chat components
+│   ├── banner.tsx        # Competition banner
+│   ├── prize.tsx         # Prize pool display
+│   └── youtubelist.tsx   # Creator leaderboard
+├── lib/                  # Utility functions and configurations
+│   ├── db/               # Database schema, queries, and migrations
+│   ├── auth/             # Authentication middleware
+│   └── supabase/         # Supabase client configuration
+├── hooks/                # Custom React hooks
+└── public/               # Static assets (images, icons)
 ```
 
 ## Available Scripts
@@ -86,16 +136,40 @@ mesmerism-web/
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run db:setup` - Setup database schema
+- `npm run db:seed` - Seed database with initial data
+- `npm run db:generate` - Generate database migrations
+- `npm run db:migrate` - Run database migrations
+- `npm run db:studio` - Open Drizzle Studio for database management
 
-## Development
+## Database Schema
 
-The application uses:
+The application uses PostgreSQL with the following main entities:
 
-- **App Router** for file-based routing
-- **Turbopack** for faster development builds
-- **Tailwind CSS v4** for styling
-- **Radix UI** for accessible components
-- **TypeScript** for type safety
+- **users**: User accounts with authentication and profile data
+- **profiles**: Extended creator profiles with social links and descriptions
+- **competition_weeks**: Weekly competition periods with start/end dates
+- **vote_orders**: User votes for creators with coin transactions
+- **coin_ledger**: Transaction history for coin purchases and spending
+- **coin_topups**: Payment records for coin purchases
+- **messages**: Real-time chat messages with moderation features
+- **user_roles**: Role-based access control (admin, moderator, creator)
+- **user_suspensions**: User moderation and ban management
+
+## Development Setup
+
+1. **Environment Variables**: Set up Supabase credentials and database connection
+2. **Database**: Run `npm run db:setup` to initialize the database schema
+3. **Seed Data**: Use `npm run db:seed` to populate initial data
+4. **Real-time**: Configure Supabase real-time subscriptions for live updates
+
+## Key Development Features
+
+- **Real-time Updates**: Live leaderboard and chat using Supabase subscriptions
+- **Type Safety**: Full TypeScript coverage with Drizzle ORM
+- **Mobile-First**: Responsive design with mobile-optimized components
+- **Gaming UI**: Custom animations and visual effects for competition elements
+- **Modular Architecture**: Component-based structure with clear separation of concerns
 
 ## Learn More
 
