@@ -168,12 +168,7 @@ export default function Youtubelist() {
   console.log("rerendering");
 
   return (
-    <motion.div
-      className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8">
       <motion.div
         className="relative w-full m-0 p-0"
         initial={{ y: -20, opacity: 0 }}
@@ -190,11 +185,11 @@ export default function Youtubelist() {
         />
       </motion.div>
 
-      <motion.div className="grid gap-4" layout>
+      <div className="grid gap-4 relative overflow-hidden">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
             // Show skeleton loaders while loading
-            Array.from({ length: 4 }).map((_, index) => (
+            Array.from({ length: 40 }).map((_, index) => (
               <motion.div
                 key={`skeleton-${index}`}
                 initial={{ opacity: 0, y: 20 }}
@@ -238,7 +233,7 @@ export default function Youtubelist() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

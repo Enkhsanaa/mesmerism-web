@@ -9,12 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-
-interface LivechatClientProps {
-  user: any;
-}
 
 /**
  * Responsive Livechat Client Component
@@ -28,14 +25,11 @@ interface LivechatClientProps {
  * - Smooth animations and transitions
  * - Touch-friendly mobile interface
  */
-export function LivechatClient({ user }: LivechatClientProps) {
+export function LivechatClient() {
+  const { user } = useRealtimeStore();
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-
-  if (!user) {
-    return null;
-  }
 
   // Reset unread state when dialog opens
   useEffect(() => {
@@ -124,6 +118,11 @@ export function LivechatClient({ user }: LivechatClientProps) {
     ),
     []
   );
+
+  // Early return after all hooks
+  if (!user) {
+    return null;
+  }
 
   return (
     <>

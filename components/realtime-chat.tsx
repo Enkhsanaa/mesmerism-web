@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { ChatMessageItem } from "@/components/chat-message";
 import { EmojiPicker } from "@/components/emoji-picker";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export const RealtimeChat = ({
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { user } = useRealtime();
+  const { user } = useRealtimeStore();
   const isAdmin = user?.roles.includes("admin");
   const isModerator = user?.roles.includes("moderator");
   const { banUser, timeoutUser, unbanUser } = useUserManage();

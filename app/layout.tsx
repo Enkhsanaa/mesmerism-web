@@ -35,18 +35,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Mesmerism" />
       </head>
       <body className={`${manrope.variable} ${geistMono.variable} antialiased`}>
-        <SWRConfig
-          value={{
-            fallback: {
-              // We do NOT await here
-              // Only components that read this data will suspend
-              "/api/user": getUser(),
-              "/api/user/coins": getUserBalance(),
-            },
-          }}
-        >
-          {children}
-        </SWRConfig>
+        <SWRConfig>{children}</SWRConfig>
       </body>
     </html>
   );

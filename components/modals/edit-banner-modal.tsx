@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useBannerUrl } from "@/hooks/use-banner-url";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { toast } from "sonner";
 
 interface EditBannerModalProps {
@@ -23,7 +23,7 @@ interface EditBannerModalProps {
 }
 
 export function EditBannerModal({ open, onOpenChange }: EditBannerModalProps) {
-  const { supabase, user } = useRealtime();
+  const { supabase, user } = useRealtimeStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);

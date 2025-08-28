@@ -17,6 +17,8 @@ type DbUser = {
 type DbUserOverview = {
   id: string;
   username: string;
+  email: string;
+  color: string;
   avatar_url: string;
   roles: ("admin" | "moderator" | "creator")[];
   message_source: "admin" | "moderator" | "creator" | "user" | "system";

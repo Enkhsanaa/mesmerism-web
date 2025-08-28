@@ -1,6 +1,6 @@
 "use client";
 import { useModal } from "@/app/(dashboard)/modal-provider";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { cn, formatAmount } from "@/lib/utils";
 import { CheckIcon, ChevronDown, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -73,7 +73,7 @@ const CoinOption = ({
 };
 
 export default function CoinSelectModal() {
-  const { supabase, user, subscribe, unsubscribe } = useRealtime();
+  const { supabase, user, subscribe, unsubscribe } = useRealtimeStore();
   const { coinModalOpen, setCoinModalOpen } = useModal();
   const [isWaitingPayment, setIsWaitingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);

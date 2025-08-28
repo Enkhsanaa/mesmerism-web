@@ -1,9 +1,9 @@
-import { useRealtime, WebsiteEvent } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore, WebsiteEvent } from "@/lib/stores/realtime-store";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export function UserSuspensionListener() {
-  const { user, subscribe, unsubscribe } = useRealtime();
+  const { user, subscribe, unsubscribe } = useRealtimeStore();
 
   const handleSuspension = (suspension: {
     suspended: boolean;

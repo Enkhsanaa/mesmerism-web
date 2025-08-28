@@ -1,12 +1,12 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { useCallback, useEffect, useState } from "react";
 
 export function useBannerUrl() {
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { supabase } = useRealtime();
+  const { supabase } = useRealtimeStore();
 
   const fetchBannerUrl = useCallback(async () => {
     try {

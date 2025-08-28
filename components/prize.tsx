@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Press_Start_2P } from "next/font/google";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -18,7 +18,7 @@ interface CompetitionWeek {
 }
 
 export default function Prize() {
-  const { supabase, currentWeekId, setCurrentWeekId } = useRealtime();
+  const { supabase, currentWeekId, setCurrentWeekId } = useRealtimeStore();
   const [weeks, setWeeks] = useState<CompetitionWeek[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPrize, setTotalPrize] = useState(15000000); // Default value

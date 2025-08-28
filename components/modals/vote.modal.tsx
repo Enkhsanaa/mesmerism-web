@@ -1,4 +1,4 @@
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
 import CoinIcon from "../icons/coin";
@@ -25,11 +25,19 @@ export default function VoteModal() {
     supabase,
     currentWeekId,
     refreshUserBalance,
-  } = useRealtime();
+  } = useRealtimeStore();
   const [selectedCoins, setSelectedCoins] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!voteModalOpen) return null;
+
+  if (!selectedCreator) {
+    console.error("VoteModal: No selected creator, closing modal");
+    setVoteModalOpen(false);
+    return null;
+  }
+
+  console.log("VoteModal rendering with creator:", selectedCreator);
 
   const handleVote = async () => {
     if (!selectedCreator || !currentWeekId || selectedCoins <= 0) {

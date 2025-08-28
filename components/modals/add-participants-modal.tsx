@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
-import { Search, Users, UserPlus, UserMinus } from "lucide-react";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { Search, UserMinus, UserPlus, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface Creator {
@@ -37,7 +36,7 @@ export default function AddParticipantsModal({
   onClose,
   onParticipantsUpdated,
 }: AddParticipantsModalProps) {
-  const { supabase } = useRealtime();
+  const { supabase } = useRealtimeStore();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);

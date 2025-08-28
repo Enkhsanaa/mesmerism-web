@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { createClient } from "@/lib/supabase/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -44,7 +44,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
   const { pageSize = 30, includeDeleted = false } = options;
 
   const supabase = useMemo(() => createClient(), []);
-  const { subscribe, unsubscribe, isConnected } = useRealtime();
+  const { subscribe, unsubscribe, isConnected } = useRealtimeStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);

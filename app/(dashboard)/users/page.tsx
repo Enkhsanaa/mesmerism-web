@@ -22,7 +22,7 @@ import { timeSince } from "@/lib/utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Clock, Receipt, Search, Settings, Vote } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useRealtime } from "../realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 
 type AppRole = "admin" | "moderator" | "creator";
 
@@ -117,7 +117,7 @@ async function fetchManageUsersOneQuery(
 }
 
 export default function UsersPage() {
-  const { supabase } = useRealtime();
+  const { supabase } = useRealtimeStore();
   const [users, setUsers] = useState<ManageUser[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);

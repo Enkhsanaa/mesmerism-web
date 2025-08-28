@@ -32,10 +32,21 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [voteSuccessModalOpen, setVoteSuccessModalOpen] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<DbUser | null>(null);
 
+  // Enhanced setter functions with logging
+  const handleSetVoteModalOpen = (open: boolean) => {
+    console.log(`Setting vote modal to: ${open}`);
+    setVoteModalOpen(open);
+  };
+
+  const handleSetSelectedCreator = (creator: DbUser | null) => {
+    console.log("Setting selected creator:", creator);
+    setSelectedCreator(creator);
+  };
+
   const contextValue: ModalContextType = useMemo(
     () => ({
       voteModalOpen,
-      setVoteModalOpen,
+      setVoteModalOpen: handleSetVoteModalOpen,
       coinModalOpen,
       setCoinModalOpen,
       waitPaymentModalOpen,
@@ -43,19 +54,14 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
       voteSuccessModalOpen,
       setVoteSuccessModalOpen,
       selectedCreator,
-      setSelectedCreator,
+      setSelectedCreator: handleSetSelectedCreator,
     }),
     [
       voteModalOpen,
-      setVoteModalOpen,
       coinModalOpen,
-      setCoinModalOpen,
       waitPaymentModalOpen,
-      setWaitPaymentModalOpen,
       voteSuccessModalOpen,
-      setVoteSuccessModalOpen,
       selectedCreator,
-      setSelectedCreator,
     ]
   );
 

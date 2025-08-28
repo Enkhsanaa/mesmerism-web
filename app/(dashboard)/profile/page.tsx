@@ -5,13 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { users } from "@/lib/db/migrations/schema";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Loader2 } from "lucide-react";
 import { Suspense, useActionState, useState } from "react";
 import useSWR from "swr";
 import { updateProfile } from "./actions";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type ActionState = {
   username?: string | null;
@@ -177,17 +175,24 @@ function AccountForm({
 }
 
 function AccountFormWithData({ state }: { state: ActionState }) {
-  const { data: user } = useSWR<typeof users.$inferSelect>(
-    "/api/user",
-    fetcher
-  );
+  const { supabase } = useRealtimeStore();
+  const { data: user } = useSWR<DbUserOverview>("/api/user", async () => {
+    const { data: userData, error: userError } = await supabase.rpc(
+      "get_self_overview"
+    );
+    if (userError) {
+      console.error("Error loading user data:", userError);
+      return null;
+    }
+    return userData;
+  });
   return (
     <AccountForm
       state={state}
       usernameValue={user?.username ?? ""}
-      emailValue=""
+      emailValue={user?.email ?? ""}
       colorValue={user?.color ?? ""}
-      avatarUrlValue={user?.avatarUrl ?? ""}
+      avatarUrlValue={user?.avatar_url ?? ""}
     />
   );
 }

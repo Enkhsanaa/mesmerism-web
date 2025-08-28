@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -100,7 +100,7 @@ export default function UserTransactionsModal({
   isOpen,
   onClose,
 }: UserTransactionsModalProps) {
-  const { supabase } = useRealtime();
+  const { supabase } = useRealtimeStore();
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

@@ -29,12 +29,14 @@ create type public.message_source as enum ('user', 'creator', 'moderator', 'admi
 create table public.users (
   id            uuid primary key,
   username      text not null,
+  email         text not null,
   avatar_url    text,
   color         text check (color ~* '^#([0-9a-f]{6})$') default '#888888',
   created_at    timestamptz not null default timezone('utc', now())
 );
 comment on column public.users.id is 'References the internal Supabase Auth user.';
 create unique index users_username_lower_uniq on public.users (lower(username));
+create unique index users_email_lower_uniq on public.users (lower(email));
 
 -- -----------------------
 -- ROLES & PERMISSIONS
@@ -1196,8 +1198,8 @@ as $$
     -- prevent race in first-user admin promotion
     perform pg_advisory_xact_lock(42);
 
-  insert into public.users (id, username, avatar_url)
-  values (new.id, coalesce(new.raw_user_meta_data->>'username', new.email), null);  -- empty password_hash if coming from Supabase
+  insert into public.users (id, username, email, avatar_url)
+  values (new.id, coalesce(new.raw_user_meta_data->>'username', new.email), new.email, null);  -- empty password_hash if coming from Supabase
 
     -- First user becomes admin (re-check under lock)
     select count(*) = 1 from auth.users into is_first_user;
@@ -1265,6 +1267,8 @@ begin
     create type public.user_overview as (
       id                      uuid,
       username                text,
+      email                   text,
+      color                   text,
       avatar_url              text,
       roles                   public.app_role[],
       message_source          public.message_source,
@@ -1285,7 +1289,7 @@ security definer
 set search_path = ''
 as $$
   with me as (
-    select u.id, u.username, u.avatar_url
+    select u.id, u.username, u.email, u.color, u.avatar_url
     from public.users u
     where u.id = auth.uid()
   ),
@@ -1312,6 +1316,8 @@ as $$
   select
     me.id,
     me.username,
+    me.email,
+    me.color,
     me.avatar_url,
     coalesce(roles.roles, '{}')::public.app_role[],
     public.role_class_for_user(auth.uid()) as message_source,

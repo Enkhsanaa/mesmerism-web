@@ -1,9 +1,11 @@
+"use client";
+
 import Banner from "@/components/banner";
-import Livechat from "@/components/livechat";
+import { LivechatClient } from "@/components/livechat-client";
 import Prize from "@/components/prize";
 import YoutubeList from "@/components/youtubelist ";
 
-export default async function Home() {
+export default function Home() {
   return (
     <>
       <Banner />
@@ -13,7 +15,7 @@ export default async function Home() {
           <YoutubeList />
         </div>
         <div className="flex-1 max-w-[530px]">
-          <Livechat />
+          <LivechatClient />
         </div>
       </div>
     </>
