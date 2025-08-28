@@ -204,6 +204,8 @@ function CreatorCard({
                   avatar_url: creator.avatarUrl || "",
                   color: "#FAD02C",
                   created_at: new Date().toISOString(),
+                  received_votes: 0,
+                  quote: "",
                 });
                 setVoteModalOpen(true);
               }}
