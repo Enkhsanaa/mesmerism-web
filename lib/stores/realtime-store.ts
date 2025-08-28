@@ -141,12 +141,20 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
     } = get();
 
     try {
+      console.log("Setting up realtime channel...");
+
       // Wait for auth to be ready
       const session = await supabase.auth.getSession();
       if (session.error) {
         console.error("Error getting session:", session.error);
+        setIsConnected(false);
         return;
       }
+
+      console.log(
+        "Session status:",
+        session.data.session ? "Authenticated" : "Not authenticated"
+      );
 
       const { data: userData, error: userError } = await supabase.rpc(
         "get_self_overview"
@@ -157,7 +165,12 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
       }
 
       if (userData) {
+        console.log("User data loaded:", userData.username);
         setUser(userData);
+      } else {
+        console.log("No user data found");
+        setIsConnected(false);
+        return;
       }
 
       const { data: currentWeekId } = await supabase
@@ -176,11 +189,14 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
 
       if (!session.data.session?.access_token) {
         console.error("No access token found");
+        setIsConnected(false);
         return;
       }
 
+      console.log("Setting realtime auth...");
       await supabase.realtime.setAuth(session.data.session?.access_token);
 
+      console.log("Creating realtime channel...");
       const newChannel = supabase
         .channel("LIVE_EVENTS", {
           config: {
@@ -198,6 +214,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
             table: "chat_messages",
           },
           (payload) => {
+            console.log("Postgres change received:", payload);
             handleEvent("CHAT_MESSAGE", payload);
           }
         )
@@ -206,10 +223,21 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
           console.log(event, " received:", eventPayload);
           handleEvent(event, eventPayload);
         })
+
         .subscribe((status) => {
           console.log("Realtime subscription status:", status);
           if (status === "SUBSCRIBED") {
+            console.log("Realtime channel subscribed successfully");
             setIsConnected(true);
+          } else if (status === "CHANNEL_ERROR") {
+            console.error("Realtime channel error");
+            setIsConnected(false);
+          } else if (status === "TIMED_OUT") {
+            console.error("Realtime channel timed out");
+            setIsConnected(false);
+          } else if (status === "CLOSED") {
+            console.log("Realtime channel closed");
+            setIsConnected(false);
           }
         });
 
@@ -217,6 +245,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
       console.log("Realtime channel setup complete");
     } catch (error) {
       console.error("Error setting up realtime channel:", error);
+      setIsConnected(false);
     }
   },
 

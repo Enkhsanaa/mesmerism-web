@@ -221,7 +221,7 @@ export default function CoinSelectModal() {
                     />
                   ))}
                   <Collapsible className="flex flex-col gap-2 pt-10">
-                    <CollapsibleTrigger>
+                    <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="w-full">
                         <p className="text-sm text-[#DCDDDE]">
                           or custom amount of coins

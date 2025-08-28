@@ -99,6 +99,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Only load messages when connected
+      if (!isConnected) return;
+
       setIsLoading(true);
 
       let q = supabase
@@ -130,10 +133,13 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     return () => {
       cancelled = true;
     };
-  }, [supabase, pageSize, includeDeleted]);
+  }, [supabase, pageSize, includeDeleted, isConnected]);
 
   // -------- Realtime subscription to CHAT_MESSAGE events --------
   useEffect(() => {
+    // Only subscribe when connected
+    if (!isConnected) return;
+
     const handleChatMessage = (payload: PostgresPayload) => {
       console.log("Chat message received via realtime:", payload);
       // Handle different types of chat message events
@@ -152,7 +158,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
     return () => {
       unsubscribeChat();
     };
-  }, [subscribe, unsubscribe, applyUpsert, applyDelete]);
+  }, [subscribe, unsubscribe, applyUpsert, applyDelete, isConnected]);
 
   // -------- Pagination --------
   const loadMore = useCallback(async () => {

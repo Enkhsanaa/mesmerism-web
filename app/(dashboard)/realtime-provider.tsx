@@ -12,24 +12,48 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     let isCancelled = false;
 
     const initialize = async () => {
-      if (!isCancelled) {
+      if (isCancelled) return;
+
+      try {
+        console.log("RealtimeProvider: Initializing...");
         await setupChannel();
+      } catch (error) {
+        console.error("RealtimeProvider: Error during initialization:", error);
       }
     };
 
-    initialize();
+    // Wait a bit for auth to be ready
+    const timer = setTimeout(() => {
+      if (!isCancelled) {
+        initialize();
+      }
+    }, 100);
 
     const {
       data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange(async (event, _session) => {
-      if (event === "SIGNED_OUT") {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("RealtimeProvider: Auth state change:", event);
+
+      if (event === "SIGNED_IN" && session) {
+        console.log("RealtimeProvider: User signed in, setting up channel...");
+        if (!isCancelled) {
+          await initialize();
+        }
+      } else if (event === "SIGNED_OUT") {
+        console.log("RealtimeProvider: User signed out");
         setUser(null);
         router.push("/");
+      } else if (event === "TOKEN_REFRESHED" && session) {
+        console.log("RealtimeProvider: Token refreshed, reconnecting...");
+        if (!isCancelled) {
+          await initialize();
+        }
       }
     });
 
     return () => {
       isCancelled = true;
+      clearTimeout(timer);
       cleanup();
       authSubscription.unsubscribe();
     };

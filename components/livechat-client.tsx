@@ -26,7 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - Touch-friendly mobile interface
  */
 export function LivechatClient() {
-  const { user } = useRealtimeStore();
+  const { user, isConnected } = useRealtimeStore();
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -119,9 +119,16 @@ export function LivechatClient() {
     []
   );
 
-  // Early return after all hooks
-  if (!user) {
-    return null;
+  // Show loading state while connecting
+  if (!user || !isConnected) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Холбогдож байна...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
