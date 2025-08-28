@@ -789,12 +789,7 @@ stable
 security definer
 set search_path = ''
 as $$
-  with totals as (
-    select sum(votes)::numeric as total_votes
-    from public.week_vote_totals
-    where week_id = p_week_id
-  ),
-  per_participant as (
+  with per_participant as (
     select
       wp.week_id,
       wp.creator_user_id,
@@ -804,27 +799,26 @@ as $$
       on wvt.week_id = wp.week_id
      and wvt.creator_user_id = wp.creator_user_id
     where wp.week_id = p_week_id
+  ),
+  maxima as (
+    select max(votes) as max_votes
+    from per_participant
   )
   select
     pp.week_id,
     pp.creator_user_id,
-    case when t.total_votes = 0 then 0
-         else round((pp.votes / nullif(t.total_votes,0)) * 100.0, 2)
+    case when m.max_votes = 0 then 0
+         else round((pp.votes / nullif(m.max_votes, 0)) * 100.0, 2)
     end as percent,
     rank() over (partition by pp.week_id order by pp.votes desc, pp.creator_user_id asc) as rank
   from per_participant pp
-  cross join totals t
+  cross join maxima m
   order by rank;
 $$;
 
 -- 5) OPTIONAL: Materialized view for cheap reads (refresh ~10s by a job)
 create materialized view public.week_leaderboards_mv as
-with totals as (
-  select week_id, sum(votes)::numeric as total_votes
-  from public.week_vote_totals
-  group by week_id
-),
-joined as (
+with joined as (
   select
     wp.week_id,
     wp.creator_user_id,
@@ -833,16 +827,21 @@ joined as (
   left join public.week_vote_totals wvt
     on wvt.week_id = wp.week_id
    and wvt.creator_user_id = wp.creator_user_id
+),
+maxima as (
+  select week_id, max(votes) as max_votes
+  from joined
+  group by week_id
 )
 select
   j.week_id,
   j.creator_user_id,
-  case when t.total_votes = 0 then 0
-       else round((j.votes / nullif(t.total_votes,0)) * 100.0, 2)
+  case when m.max_votes = 0 then 0
+       else round((j.votes / nullif(m.max_votes, 0)) * 100.0, 2)
   end as percent,
   rank() over (partition by j.week_id order by j.votes desc, j.creator_user_id asc) as rank
 from joined j
-join totals t using (week_id);
+join maxima m using (week_id);
 
 -- Required for REFRESH CONCURRENTLY
 create unique index week_leaderboards_mv_pk
