@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { signup } from "./actions";
 import Link from "next/link";
+import GoogleLoginButton from "@/components/google-login-button";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -211,6 +212,8 @@ export default function Register() {
             Нэвтрэх
           </Button>
         </form>
+        <div className="w-full h-[1px] bg-[#34373C]" />
+        <GoogleLoginButton />
       </CardContent>
     </Card>
   );

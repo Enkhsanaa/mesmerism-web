@@ -9,6 +9,7 @@ import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { login } from "./actions";
+import GoogleLoginButton from "@/components/google-login-button";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -149,6 +150,8 @@ export default function Login() {
             Бүртгүүлэх
           </Button>
         </form>
+        <div className="w-full h-[1px] bg-[#34373C]" />
+        <GoogleLoginButton />
       </CardContent>
     </Card>
   );
