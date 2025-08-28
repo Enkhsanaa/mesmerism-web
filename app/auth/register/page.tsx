@@ -9,6 +9,7 @@ import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { signup } from "./actions";
+import Link from "next/link";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -148,15 +149,21 @@ export default function Register() {
           <div className="flex flex-col items-start justify-start gap-[8px] w-full">
             <p className="text-sm text-[#DCDDDE] p-0 m-0 font-semibold">
               Доорх "Би зөвшөөрч байна." товчийг дарснаар би
-              <a href="#" className="text-sm text-[#FAD02C] p-0 m-0 underline">
+              <Link
+                href="/terms-conditions"
+                className="text-sm text-[#FAD02C] p-0 m-0 underline"
+              >
                 {" "}
                 Үйлчилгээний нөхцөл{" "}
-              </a>
+              </Link>
               - ийг уншиж танилцан зөвшөөрч, мөн
-              <a href="#" className="text-sm text-[#FAD02C] p-0 m-0 underline">
+              <Link
+                href="/privacy-policy"
+                className="text-sm text-[#FAD02C] p-0 m-0 underline"
+              >
                 {" "}
                 Нууцлалын бодлого{" "}
-              </a>
+              </Link>
               - той танилцсан болохоо хүлээн зөвшөөрч байна.
             </p>
             <div className="flex items-center justify-between w-full m-0 py-[12px]">

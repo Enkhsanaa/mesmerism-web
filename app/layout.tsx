@@ -1,7 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
-import { getUser, getUserBalance } from "@/lib/db/queries";
 import { SWRConfig } from "swr";
 
 const geistMono = Geist_Mono({
