@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const { supabase, setupChannel, cleanup, setUser } = useRealtimeStore();
+  const { supabase, setupChannel, cleanup, setUser, user } = useRealtimeStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -22,13 +22,6 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Wait a bit for auth to be ready
-    const timer = setTimeout(() => {
-      if (!isCancelled) {
-        initialize();
-      }
-    }, 100);
-
     const {
       data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -36,8 +29,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
       if (event === "SIGNED_IN" && session) {
         console.log("RealtimeProvider: User signed in, setting up channel...");
-        if (!isCancelled) {
+        if (!user) {
           await initialize();
+        } else {
+          console.log("user", user);
         }
       } else if (event === "SIGNED_OUT") {
         console.log("RealtimeProvider: User signed out");
@@ -45,15 +40,13 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         router.push("/");
       } else if (event === "TOKEN_REFRESHED" && session) {
         console.log("RealtimeProvider: Token refreshed, reconnecting...");
-        if (!isCancelled) {
-          await initialize();
-        }
+        await initialize();
       }
     });
+    initialize();
 
     return () => {
       isCancelled = true;
-      clearTimeout(timer);
       cleanup();
       authSubscription.unsubscribe();
     };

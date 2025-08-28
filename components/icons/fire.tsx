@@ -15,7 +15,7 @@ export default function Fire({ className }: FireProps) {
       ? structuredClone(animationDataRaw)
       : JSON.parse(JSON.stringify(animationDataRaw));
   return (
-    <div className={cn("", className)}>
+    <div className={cn("pointer-events-none", className)}>
       <Lottie
         className="w-full h-full"
         animationData={animationData}

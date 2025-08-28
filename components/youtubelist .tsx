@@ -4,21 +4,64 @@ import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useLeaderboard } from "@/hooks/use-leaderboard";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { HandHeart, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, HandHeart, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useState, useMemo, useEffect, useRef } from "react";
 import BubbleIcon from "./icons/bubble";
 import Fire from "./icons/fire";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { GlassButton } from "./ui/glass-button";
 import { Input } from "./ui/input";
 
-function CreatorCard({ creator }: { creator: WeekStanding }) {
+// Fuzzy search function
+function fuzzySearch(query: string, text: string): boolean {
+  if (!query) return true;
+
+  const queryLower = query.toLowerCase();
+  const textLower = text.toLowerCase();
+
+  let queryIndex = 0;
+  let textIndex = 0;
+
+  while (queryIndex < queryLower.length && textIndex < textLower.length) {
+    if (queryLower[queryIndex] === textLower[textIndex]) {
+      queryIndex++;
+    }
+    textIndex++;
+  }
+
+  return queryIndex === queryLower.length;
+}
+
+function CreatorCard({
+  creator,
+  previousRank,
+}: {
+  creator: WeekStanding;
+  previousRank: number | null;
+}) {
   const { setSelectedCreator, setVoteModalOpen } = useModal();
 
   const getInitials = (username: string | null) => {
     if (!username) return "??";
     return username.slice(0, 2).toUpperCase();
   };
+
+  // Calculate ranking change
+  const getRankingChange = () => {
+    if (!previousRank) return null; // No previous rank to compare
+
+    const change = previousRank - creator.rank;
+    if (change > 0) {
+      return { type: "up", value: change };
+    } else if (change < 0) {
+      return { type: "down", value: Math.abs(change) };
+    } else {
+      return { type: "same", value: 0 };
+    }
+  };
+
+  const rankingChange = getRankingChange();
 
   return (
     <motion.div
@@ -41,17 +84,70 @@ function CreatorCard({ creator }: { creator: WeekStanding }) {
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="flex items-center flex-3/5">
+          <div className="flex items-center flex-3/5 gap-2">
             {/* Left: Rank */}
-            <motion.span
-              className="text-white text-base mr-4"
-              key={creator.rank}
-              initial={{ scale: 1.2, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {creator.rank}
-            </motion.span>
+            <div className="flex flex-col justify-around items-center">
+              <motion.span
+                className="text-white text-base font-semibold"
+                key={creator.rank}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {creator.rank}
+              </motion.span>
+              {/* Ranking change indicator */}
+              {rankingChange && (
+                <AnimatePresence mode="wait">
+                  {rankingChange.type === "up" && (
+                    <motion.p
+                      key="up"
+                      className="flex items-center gap-1"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ArrowUp className="text-[#4CAF50] size-4" />
+                      <span className="text-[#3BA55C] text-sm font-semibold">
+                        {rankingChange.value}
+                      </span>
+                    </motion.p>
+                  )}
+
+                  {rankingChange.type === "down" && (
+                    <motion.p
+                      key="down"
+                      className="flex items-center gap-1"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ArrowDown className="text-[#E53935] size-4" />
+                      <span className="text-[#EF5350] text-sm font-semibold">
+                        {rankingChange.value}
+                      </span>
+                    </motion.p>
+                  )}
+
+                  {rankingChange.type === "same" && (
+                    <motion.p
+                      key="same"
+                      className="flex items-center gap-1"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <span className="text-[#444444] text-sm font-semibold">
+                        -
+                      </span>
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              )}
+            </div>
             {/* Avatar with badge */}
             <div className="relative mr-4">
               <Avatar className="size-12 border-yellow-300 border-2">
@@ -165,6 +261,45 @@ function CreatorCardSkeleton() {
 
 export default function Youtubelist() {
   const { isLoading, creators } = useLeaderboard();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [previousRanks, setPreviousRanks] = useState<Map<string, number>>(
+    new Map()
+  );
+  const previousCreatorsRef = useRef<WeekStanding[]>([]);
+
+  // Track ranking changes
+  useEffect(() => {
+    if (creators.length > 0) {
+      const newPreviousRanks = new Map<string, number>();
+
+      creators.forEach((creator) => {
+        const previousCreator = previousCreatorsRef.current.find(
+          (c) => c.creatorId === creator.creatorId
+        );
+        if (previousCreator) {
+          newPreviousRanks.set(creator.creatorId, previousCreator.rank);
+        }
+      });
+
+      setPreviousRanks(newPreviousRanks);
+      previousCreatorsRef.current = [...creators];
+    }
+  }, [creators]);
+
+  const filteredCreators = useMemo(() => {
+    if (!searchQuery) {
+      return creators;
+    }
+    return creators.filter((creator) => {
+      const matchesUsername = fuzzySearch(searchQuery, creator.username || "");
+      const matchesProfileTitle = fuzzySearch(
+        searchQuery,
+        creator.profileTitle || ""
+      );
+      return matchesUsername || matchesProfileTitle;
+    });
+  }, [creators, searchQuery]);
+
   console.log("rerendering");
 
   return (
@@ -180,12 +315,25 @@ export default function Youtubelist() {
           type="text"
           name="search"
           placeholder="Youtuber хайх"
-          defaultValue={""}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
         />
       </motion.div>
 
-      <div className="grid gap-4 relative overflow-hidden">
+      {searchQuery && (
+        <motion.div
+          className="text-sm text-gray-400 mb-2"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+        >
+          {filteredCreators.length} Youtuber олдлоо
+        </motion.div>
+      )}
+
+      <div className="grid gap-4 relative">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
             // Show skeleton loaders while loading
@@ -203,9 +351,9 @@ export default function Youtubelist() {
                 <CreatorCardSkeleton />
               </motion.div>
             ))
-          ) : creators.length > 0 ? (
+          ) : filteredCreators.length > 0 ? (
             // Show actual creators when loaded
-            creators.map((creator, index) => (
+            filteredCreators.map((creator, index) => (
               <motion.div
                 key={creator.creatorId}
                 initial={{ opacity: 0, y: 20 }}
@@ -217,9 +365,23 @@ export default function Youtubelist() {
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
               >
-                <CreatorCard creator={creator} />
+                <CreatorCard
+                  creator={creator}
+                  previousRank={previousRanks.get(creator.creatorId) || null}
+                />
               </motion.div>
             ))
+          ) : searchQuery ? (
+            // Show no search results message
+            <motion.div
+              className="text-center py-12 text-gray-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <p>"{searchQuery}" гэсэн хайлтад тохирох Youtuber олдсонгүй</p>
+            </motion.div>
           ) : (
             // Show empty state when no creators found
             <motion.div

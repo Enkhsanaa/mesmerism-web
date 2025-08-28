@@ -87,6 +87,7 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
 
   subscribe: (eventType, callback) => {
     const { subscribers } = get();
+    console.log("subscribing to", eventType);
 
     if (!subscribers.has(eventType)) {
       subscribers.set(eventType, new Set());
