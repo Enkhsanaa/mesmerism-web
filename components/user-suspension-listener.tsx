@@ -3,10 +3,14 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 export function UserSuspensionListener() {
-  const { user, userSuspension, subscribe, unsubscribe } = useRealtime();
+  const { user, subscribe, unsubscribe } = useRealtime();
 
-  const handleSuspension = (suspension: UserSuspension) => {
-    if (!suspension) return;
+  const handleSuspension = (suspension: {
+    suspended: boolean;
+    reason: string | null;
+    expires_at: string | null;
+  }) => {
+    if (!suspension.suspended) return;
     if (!suspension.expires_at) {
       // permanent suspension
       toast.error(suspension.reason, {
@@ -37,10 +41,14 @@ export function UserSuspensionListener() {
   };
 
   useEffect(() => {
-    if (userSuspension) {
-      handleSuspension(userSuspension);
+    if (user?.suspended) {
+      handleSuspension({
+        suspended: user.suspended,
+        reason: user.suspension_reason,
+        expires_at: user.suspension_expires_at,
+      });
     }
-  }, [userSuspension]);
+  }, [user]);
 
   useEffect(() => {
     const handleSystemAnnouncement = (
@@ -50,7 +58,11 @@ export function UserSuspensionListener() {
         payload.data.target_user_id === user?.id &&
         !payload.cleared_suspension
       ) {
-        handleSuspension(payload.data);
+        handleSuspension({
+          suspended: !!payload.data,
+          reason: payload.data.reason,
+          expires_at: payload.data.expires_at,
+        });
       } else if (
         payload.data.target_user_id === user?.id &&
         payload.cleared_suspension

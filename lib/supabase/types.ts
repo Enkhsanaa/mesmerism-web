@@ -14,6 +14,18 @@ type DbUser = {
   created_at: string;
 };
 
+type DbUserOverview = {
+  id: string;
+  username: string;
+  avatar_url: string;
+  roles: ("admin" | "moderator" | "creator")[];
+  message_source: "admin" | "moderator" | "creator" | "user" | "system";
+  suspended: boolean;
+  suspension_reason: string | null;
+  suspension_expires_at: string | null;
+  balance: number;
+};
+
 type LeaderboardEntry = {
   creator_user_id: string;
   percent: number;

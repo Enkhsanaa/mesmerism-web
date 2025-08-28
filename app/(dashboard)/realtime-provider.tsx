@@ -1,14 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type {
-  RealtimeChannel,
-  SupabaseClient,
-  User,
-} from "@supabase/supabase-js";
 
-// Event types for the website
 export type WebsiteEvent =
   | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
   | { type: "broadcast"; event: "PAYMENT_CONFIRMED"; payload: any }
@@ -26,15 +22,12 @@ export type WebsiteEvent =
 
 interface RealtimeContextType {
   supabase: SupabaseClient;
-  user: User | null;
-  userBalance: number | null;
-  userRole: string | null;
-  userSuspension: UserSuspension | null;
+  user: DbUserOverview | null;
   currentWeekId: number;
   isConnected: boolean;
 
+  refreshUserBalance: () => Promise<void>;
   setCurrentWeekId: (weekId: number) => void;
-  refreshUserBalance: () => void;
   subscribe: (
     eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
@@ -57,14 +50,10 @@ export function useRealtime() {
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [isConnected, setIsConnected] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [userBalance, setUserBalance] = useState<number | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [user, setUser] = useState<DbUserOverview | null>(null);
   const [currentWeekId, setCurrentWeekId] = useState<number>(1);
-  const [userSuspension, setUserSuspension] = useState<UserSuspension | null>(
-    null
-  );
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   // Event subscribers - map of event type to array of callbacks
@@ -134,36 +123,17 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           console.error("Error getting session:", session.error);
           return;
         }
-        if (session.data.session?.user) {
-          setUser(session.data.session?.user);
-        }
-        const { data: userRole } = await supabase
-          .from("user_roles")
-          .select("*")
-          .eq("user_id", session.data.session?.user.id)
-          .limit(1);
-        if (userRole && userRole.length > 0) {
-          setUserRole(userRole[0].role);
-        }
-        const { data: userSuspension } = await supabase
-          .from("user_suspensions")
-          .select("*")
-          .eq("target_user_id", session.data.session?.user.id)
-          .or("expires_at.is.null,expires_at.gt.now")
-          .order("expires_at", { ascending: true, nullsFirst: true })
-          .limit(1);
-        if (userSuspension && userSuspension.length > 0) {
-          setUserSuspension(userSuspension[0]);
+
+        const { data: userData, error: userError } = await supabase.rpc(
+          "get_self_overview"
+        );
+        if (userError) {
+          console.error("Error loading user data:", userError);
+          return;
         }
 
-        const { data: userBalance } = await supabase
-          .from("user_coin_balances")
-          .select("*")
-          .eq("user_id", session.data.session?.user.id)
-          .maybeSingle<{ balance: number }>();
-        console.log("userBalance", userBalance);
-        if (userBalance) {
-          setUserBalance(userBalance.balance);
+        if (userData) {
+          setUser(userData);
         }
 
         const { data: currentWeekId } = await supabase
@@ -231,6 +201,15 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     setupChannel();
 
+    const {
+      data: { subscription: authSubscription },
+    } = supabase.auth.onAuthStateChange(async (event, _session) => {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        router.push("/");
+      }
+    });
+
     return () => {
       isCancelled = true;
       setIsConnected(false);
@@ -239,26 +218,27 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         supabase.removeChannel(channel);
         setChannel(null);
       }
+      authSubscription.unsubscribe();
     };
   }, [supabase]);
 
   const refreshUserBalance = async () => {
     if (!user) return;
-    const { data: userBalance } = await supabase
+    const { data, error } = await supabase
       .from("user_coin_balances")
-      .select("*")
+      .select("balance")
       .eq("user_id", user.id)
-      .maybeSingle();
-    if (userBalance) {
-      setUserBalance(userBalance.balance);
+      .single<{ balance: number }>();
+    if (error) {
+      console.error("Error refreshing user balance:", error);
+    }
+    if (data) {
+      setUser({
+        ...user,
+        balance: data.balance,
+      });
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      refreshUserBalance();
-    }
-  }, [user]);
 
   // Separate useEffect to handle balance updates from realtime events
   useEffect(() => {
@@ -270,7 +250,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           "Updating userBalance in realtime provider (payment):",
           payload.new_balance
         );
-        setUserBalance(payload.new_balance || 0);
+        setUser({
+          ...user,
+          balance: payload.new_balance || 0,
+        });
       }
     };
 
@@ -288,28 +271,22 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     () => ({
       supabase,
       user,
-      userBalance,
-      userRole,
-      userSuspension,
       currentWeekId,
       isConnected,
 
-      setCurrentWeekId,
       refreshUserBalance,
+      setCurrentWeekId,
       subscribe,
       unsubscribe,
     }),
     [
       supabase,
       user,
-      userBalance,
-      userRole,
-      userSuspension,
       currentWeekId,
       isConnected,
 
-      setCurrentWeekId,
       refreshUserBalance,
+      setCurrentWeekId,
       subscribe,
       unsubscribe,
     ]

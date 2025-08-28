@@ -1,7 +1,7 @@
 import Header from "@/components/header";
 import BubbleIcon from "@/components/icons/bubble";
 import Fire from "@/components/icons/fire";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

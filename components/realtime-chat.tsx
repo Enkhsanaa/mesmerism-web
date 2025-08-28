@@ -38,7 +38,9 @@ export const RealtimeChat = ({
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { user, userRole } = useRealtime();
+  const { user } = useRealtime();
+  const isAdmin = user?.roles.includes("admin");
+  const isModerator = user?.roles.includes("moderator");
   const { banUser, timeoutUser, unbanUser } = useUserManage();
   const {
     messages: dbMessages,
@@ -161,7 +163,7 @@ export const RealtimeChat = ({
               !prevMessage ||
               prevMessage.author_user_id !== message.author_user_id;
 
-            if (!userRole && message.author_user_id !== user?.id) {
+            if (message.author_user_id !== user?.id) {
               return (
                 <div
                   key={message.id}
@@ -190,7 +192,7 @@ export const RealtimeChat = ({
                     />
                   </ContextMenuTrigger>
                   <ContextMenuContent>
-                    {userRole === "admin" && (
+                    {(isAdmin || isModerator) && (
                       <>
                         <ContextMenuItem
                           onClick={() => unbanUser(message.author_user_id)}

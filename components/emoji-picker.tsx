@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
 import { CUSTOM_EMOJIS } from "@/lib/emoji-renderer";
+import { useCallback, useEffect, useRef } from "react";
 
 interface EmojiPickerProps {
   isOpen: boolean;

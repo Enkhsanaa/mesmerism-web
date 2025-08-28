@@ -373,7 +373,7 @@ create table public.app_settings (
 create or replace view public.app_public_settings as
 select key, int_value, text_value, json_value
 from public.app_settings
-where key in ('coins_per_vote', 'vote_min_amount', 'vote_max_amount', 'coin_price');
+where key in ('coins_per_vote', 'vote_min_amount', 'vote_max_amount', 'coin_price', 'home_banner_image_url');
 
 -- Definer-secure getter so callers don’t need direct table rights
 create or replace function public.coins_per_vote()
@@ -428,6 +428,19 @@ as $$
   );
 $$;
 
+create or replace function public.home_banner_image_url()
+returns text
+stable
+security definer
+set search_path = ''
+language sql
+as $$
+  select coalesce(
+    (select text_value from public.app_settings where key = 'home_banner_image_url'),
+    null
+  );
+$$;
+
 insert into public.app_settings (key, int_value) values ('coins_per_vote', 1)
 on conflict (key) do nothing;
 
@@ -438,6 +451,9 @@ insert into public.app_settings (key, int_value) values ('vote_max_amount', 1000
 on conflict (key) do nothing;
 
 insert into public.app_settings (key, int_value) values ('coin_price', 500)
+on conflict (key) do nothing;
+
+insert into public.app_settings (key, text_value) values ('home_banner_image_url', null)
 on conflict (key) do nothing;
 
 -- -----------------------
@@ -1238,6 +1254,77 @@ drop trigger if exists trg_chat_messages_changes on public.chat_messages;
 create trigger trg_chat_messages_changes
 after insert or update or delete on public.chat_messages
 for each row execute procedure public.chat_messages_changes();
+
+-- Composite type for "me"
+do $$
+begin
+  if not exists (
+    select 1 from pg_type t join pg_namespace n on n.oid=t.typnamespace
+    where t.typname='user_overview' and n.nspname='public'
+  ) then
+    create type public.user_overview as (
+      id                      uuid,
+      username                text,
+      avatar_url              text,
+      roles                   public.app_role[],
+      message_source          public.message_source,
+      suspended               boolean,
+      suspension_reason       text,
+      suspension_expires_at   timestamptz,
+      balance                 bigint
+    );
+  end if;
+end$$;
+
+-- Single-call getter for "me"
+create or replace function public.get_self_overview()
+returns public.user_overview
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with me as (
+    select u.id, u.username, u.avatar_url
+    from public.users u
+    where u.id = auth.uid()
+  ),
+  roles as (
+    select array_agg(ur.role order by ur.role) as roles
+    from public.user_roles ur
+    where ur.user_id = auth.uid()
+  ),
+  susp as (
+    select true as suspended,
+           s.reason as suspension_reason,
+           s.expires_at as suspension_expires_at
+    from public.user_suspensions s
+    where s.target_user_id = auth.uid()
+      and (s.expires_at is null or s.expires_at > now())
+    order by s.expires_at nulls first
+    limit 1
+  ),
+  bal as (
+    select coalesce(b.balance, 0) as balance
+    from public.user_coin_balances b
+    where b.user_id = auth.uid()
+  )
+  select
+    me.id,
+    me.username,
+    me.avatar_url,
+    coalesce(roles.roles, '{}')::public.app_role[],
+    public.role_class_for_user(auth.uid()) as message_source,
+    coalesce(susp.suspended, false) as suspended,
+    susp.suspension_reason,
+    susp.suspension_expires_at,
+    coalesce(bal.balance, 0) as balance
+  from me
+  left join roles on true
+  left join susp on true
+  left join bal  on true;
+$$;
+
 
 -- -----------------------
 -- PERMISSIONS SEED

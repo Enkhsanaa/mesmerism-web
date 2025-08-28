@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
     clientSegmentCache: true,
     nodeMiddleware: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        hostname: "izppufjiwetzsuoqxvve.supabase.co",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

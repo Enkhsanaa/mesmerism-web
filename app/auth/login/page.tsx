@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useActionState } from "react";
+import MesmerismIcon from "@/components/icons/mesmerism";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, User, Lock, AlertCircle, Loader2 } from "lucide-react";
-import MesmerismIcon from "@/components/icons/mesmerism";
+import { Input } from "@/components/ui/input";
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { login } from "./actions";
-import React from "react";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);

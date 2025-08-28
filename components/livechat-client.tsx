@@ -1,16 +1,16 @@
 "use client";
 
 import { RealtimeChat } from "@/components/realtime-chat";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface LivechatClientProps {
   user: any;

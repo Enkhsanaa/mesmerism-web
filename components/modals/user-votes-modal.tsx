@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -18,9 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { timeSince } from "@/lib/utils";
-import { Vote, Coins, Calendar, User } from "lucide-react";
+import { Calendar, Coins, Vote } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ManageUser {
   id: string;

@@ -1,6 +1,6 @@
 "use client";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import CheckIcon from "../icons/check";
 import CoinIcon from "../icons/coin";

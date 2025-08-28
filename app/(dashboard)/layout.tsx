@@ -1,13 +1,13 @@
 "use client";
 
 import HeaderClient from "@/components/header-client";
-import { Toaster } from "sonner";
-import { RealtimeProvider } from "./realtime-provider";
+import CoinSelectModal from "@/components/modals/coin-select-modal";
+import VoteModal from "@/components/modals/vote.modal";
 import { SystemAnnouncementListener } from "@/components/system-announcement-listener";
 import { UserSuspensionListener } from "@/components/user-suspension-listener";
+import { Toaster } from "sonner";
 import { ModalProvider } from "./modal-provider";
-import VoteModal from "@/components/modals/vote.modal";
-import CoinSelectModal from "@/components/modals/coin-select-modal";
+import { RealtimeProvider } from "./realtime-provider";
 
 export default function DashboardLayout({
   children,

@@ -1,8 +1,9 @@
 "use client";
 import { Card } from "@/components/ui/card";
-import { useRealtime } from "../realtime-provider";
 import { useEffect, useState } from "react";
+import { useRealtime } from "../realtime-provider";
 
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,11 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 
-import { Check, X, Users } from "lucide-react";
-import { EditWeekModal } from "@/components/modals/edit-week-modal";
 import AddParticipantsModal from "@/components/modals/add-participants-modal";
+import { EditWeekModal } from "@/components/modals/edit-week-modal";
+import { Check, Users, X } from "lucide-react";
 
 export default function WeeksPage() {
   const { supabase } = useRealtime();

@@ -1,9 +1,14 @@
 "use client";
-import { Card } from "@/components/ui/card";
-import { useRealtime } from "../realtime-provider";
-import { useEffect, useState, useCallback } from "react";
+import RoleManageModal from "@/components/modals/role-manage-modal";
+import TimeoutBanModal from "@/components/modals/timeout-ban-modal";
+import UserTransactionsModal from "@/components/modals/user-transactions-modal";
+import UserVotesModal from "@/components/modals/user-votes-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { timeSince } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -12,17 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useUserManage } from "@/hooks/use-user-manage";
+import { timeSince } from "@/lib/utils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Pagination } from "@/components/ui/pagination";
-import RoleManageModal from "@/components/modals/role-manage-modal";
-import TimeoutBanModal from "@/components/modals/timeout-ban-modal";
-import UserTransactionsModal from "@/components/modals/user-transactions-modal";
-import UserVotesModal from "@/components/modals/user-votes-modal";
-import { Search, Settings, Clock, Receipt, Vote } from "lucide-react";
+import { Clock, Receipt, Search, Settings, Vote } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useRealtime } from "../realtime-provider";
 
 type AppRole = "admin" | "moderator" | "creator";
 

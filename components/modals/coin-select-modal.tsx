@@ -1,9 +1,9 @@
 "use client";
 import { useModal } from "@/app/(dashboard)/modal-provider";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { cn, formatAmount } from "@/lib/utils";
 import { CheckIcon, ChevronDown, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
 import CoinIcon from "../icons/coin";
 import Loader from "../icons/loader";
 import { Button } from "../ui/button";
@@ -21,7 +21,6 @@ import {
 } from "../ui/collapsible";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 
 const UNIT_COIN = 500;
 const COIN_OPTIONS = [10, 20, 50, 100];

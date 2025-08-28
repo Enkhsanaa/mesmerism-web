@@ -20,8 +20,12 @@ import { formatAmount } from "@/lib/utils";
 export default function VoteModal() {
   const { voteModalOpen, setVoteModalOpen, selectedCreator, setCoinModalOpen } =
     useModal();
-  const { userBalance, supabase, currentWeekId, refreshUserBalance } =
-    useRealtime();
+  const {
+    user: userOverview,
+    supabase,
+    currentWeekId,
+    refreshUserBalance,
+  } = useRealtime();
   const [selectedCoins, setSelectedCoins] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,7 +37,7 @@ export default function VoteModal() {
       return;
     }
 
-    if (selectedCoins > (userBalance ?? 0)) {
+    if (selectedCoins > (userOverview?.balance ?? 0)) {
       toast.error("Insufficient balance");
       return;
     }
@@ -77,7 +81,7 @@ export default function VoteModal() {
   };
 
   const handleMaxCoins = () => {
-    setSelectedCoins(userBalance ?? 0);
+    setSelectedCoins(userOverview?.balance ?? 0);
   };
 
   const handleMinusCoins = () => {
@@ -147,7 +151,7 @@ export default function VoteModal() {
                 <Button
                   size="icon"
                   onClick={handlePlusCoins}
-                  disabled={selectedCoins >= (userBalance ?? 0)}
+                  disabled={selectedCoins >= (userOverview?.balance ?? 0)}
                   className="bg-[#F8F9FA] text-[#212121] rounded-full h-[48px] w-[48px]"
                 >
                   <Plus className="h-[20px] w-[20px] text-[#212121]" />
@@ -168,7 +172,7 @@ export default function VoteModal() {
                   <p className="text-white font-semibold text-sm">Боломжтой:</p>
                   <div className="flex items-center gap-[4px]">
                     <span className="text-white font-semibold text-sm">
-                      {formatAmount(userBalance ?? 0)}
+                      {formatAmount(userOverview?.balance ?? 0)}
                     </span>
                     <CoinIcon className="size-6 text-[#FAD02C]" />
                   </div>
@@ -192,7 +196,7 @@ export default function VoteModal() {
               <Button
                 disabled={
                   selectedCoins <= 0 ||
-                  selectedCoins > (userBalance ?? 0) ||
+                  selectedCoins > (userOverview?.balance ?? 0) ||
                   isSubmitting
                 }
                 onClick={handleVote}

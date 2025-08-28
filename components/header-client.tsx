@@ -2,102 +2,33 @@
 
 import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
-import { createClient } from "@/lib/supabase/client";
 import { formatAmount } from "@/lib/utils";
-import { ChevronDown, Plus, Settings } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  LogOut,
+  Plus,
+  User,
+  Users2,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import CoinIcon from "./icons/coin";
 import MesmerismIcon from "./icons/mesmerism";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "./ui/context-menu";
-
-interface User {
-  id: string;
-  username: string | null;
-  avatarUrl: string | null;
-}
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export default function HeaderClient() {
   const { setCoinModalOpen } = useModal();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
-  const { userRole, userBalance } = useRealtime();
-
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        // Get current user
-        const {
-          data: { user: supabaseUser },
-          error: userError,
-        } = await supabase.auth.getUser();
-        if (userError || !supabaseUser) {
-          setIsLoading(false);
-          return;
-        }
-
-        // Get user profile
-        const { data: userData, error: profileError } = await supabase
-          .from("users")
-          .select("id, username, avatar_url")
-          .eq("id", supabaseUser.id)
-          .single();
-
-        if (profileError) {
-          console.error("Error loading user profile:", profileError);
-        } else if (userData) {
-          setUser({
-            id: userData.id,
-            username: userData.username,
-            avatarUrl: userData.avatar_url,
-          });
-        }
-
-        // Get user balance
-        // const { data: balanceData, error: balanceError } = await supabase
-        //   .from("user_coin_balances")
-        //   .select("balance")
-        //   .eq("user_id", supabaseUser.id)
-        //   .single();
-
-        // if (balanceError) {
-        //   console.error("Error loading user balance:", balanceError);
-        // } else if (balanceData) {
-        //   setBalance(balanceData.balance || 0);
-        // }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUserData();
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        loadUserData();
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+  const { user: userOverview, supabase } = useRealtime();
+  const isAdmin = userOverview?.roles.includes("admin");
 
   return (
     <header className="bg-dark-background">
@@ -113,40 +44,6 @@ export default function HeaderClient() {
           <Badge variant="secondary">beta</Badge>
         </div>
         <div className="flex gap-x-4 items-center">
-          {/* Admin Menu */}
-          {userRole === "admin" && (
-            <ContextMenu>
-              <ContextMenuTrigger>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10"
-                >
-                  <Settings className="size-4 mr-2" />
-                  Admin
-                  <ChevronDown className="size-3 ml-1" />
-                </Button>
-              </ContextMenuTrigger>
-              <ContextMenuContent className="bg-[#2B2D31] border-[#404249]">
-                <Link href="/users">
-                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
-                    User Management
-                  </ContextMenuItem>
-                </Link>
-                <Link href="/weeks">
-                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
-                    Week Management
-                  </ContextMenuItem>
-                </Link>
-                <Link href="/topups">
-                  <ContextMenuItem className="text-white hover:bg-[#404249] cursor-pointer">
-                    Topup Management
-                  </ContextMenuItem>
-                </Link>
-              </ContextMenuContent>
-            </ContextMenu>
-          )}
-
           <div className="relative isolate h-9">
             <div className="absolute top-1/2 -translate-y-1/2 left-0 -translate-x-1/2 z-50 bg-[#FAD02C] rounded-full text-black p-1">
               <Plus className="size-4" />
@@ -158,17 +55,64 @@ export default function HeaderClient() {
               onClick={() => setCoinModalOpen(true)}
             >
               <CoinIcon className="size-6" />
-              {formatAmount(userBalance ?? 0)}
+              {formatAmount(userOverview?.balance ?? 0)}
             </Button>
           </div>
-          <Link href="/profile">
-            <Avatar className="size-10">
-              <AvatarImage src={user?.avatarUrl ?? ""} />
-              <AvatarFallback>
-                {user?.username?.slice(0, 2).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </Link>
+
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <Avatar className="size-10">
+                  <AvatarImage src={userOverview?.avatar_url ?? ""} />
+                  <AvatarFallback>
+                    {userOverview?.username?.slice(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown className="size-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#2B2D31] border-[#404249]">
+              <Link href="/profile">
+                <DropdownMenuItem>
+                  <User className="size-4 mr-2" />
+                  Профайл
+                </DropdownMenuItem>
+              </Link>
+              {isAdmin && (
+                <>
+                  <Link href="/users">
+                    <DropdownMenuItem>
+                      <Users2 className="size-4 mr-2" />
+                      Хэрэглэгчид
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/weeks">
+                    <DropdownMenuItem>
+                      <Calendar className="size-4 mr-2" />
+                      Тэмцээний үе
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/topups">
+                    <DropdownMenuItem>
+                      <Wallet className="size-4 mr-2" />
+                      Цэнэглэлтүүд
+                    </DropdownMenuItem>
+                  </Link>
+                </>
+              )}
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => supabase.auth.signOut()}
+              >
+                <LogOut className="size-4 mr-2 text-destructive" />
+                Гарах
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </nav>
     </header>

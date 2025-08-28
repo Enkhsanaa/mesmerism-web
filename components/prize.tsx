@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "./ui/button";
-import { Press_Start_2P } from "next/font/google";
-import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
-import { useState, useEffect } from "react";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { Press_Start_2P } from "next/font/google";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
 
 const pressStart2P = Press_Start_2P({ subsets: ["latin"], weight: "400" });
 

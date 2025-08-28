@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,6 @@ import { Loader2 } from "lucide-react";
 import { Suspense, useActionState, useState } from "react";
 import useSWR from "swr";
 import { updateProfile } from "./actions";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
