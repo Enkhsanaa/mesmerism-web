@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export type WebsiteEvent =
   | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
-  | { type: "broadcast"; event: "PAYMENT_CONFIRMED"; payload: any }
+  | { type: "broadcast"; event: "PAYMENT_EVENT"; payload: any }
   | { type: "broadcast"; event: "VOTE_CREATOR"; payload: any }
   | {
       type: "broadcast";
@@ -67,6 +67,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
   ) => {
+    console.log("Subscribing to", eventType, subscribers);
     if (!subscribers.has(eventType)) {
       subscribers.set(eventType, new Set());
     }
@@ -74,6 +75,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     // Return unsubscribe function
     return () => {
+      console.log("Unsubscribing from", eventType, subscribers);
       const callbacks = subscribers.get(eventType);
       if (callbacks) {
         callbacks.delete(callback);
@@ -101,6 +103,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   // Handle incoming events and dispatch to subscribers
   const handleEvent = (eventType: string, payload: any) => {
     const callbacks = subscribers.get(eventType);
+    console.log("handleEvent", eventType, callbacks, payload);
     if (callbacks) {
       callbacks.forEach((callback) => {
         try {
@@ -182,7 +185,6 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           )
           .on("broadcast", { event: "*" }, (payload) => {
             const { event, payload: eventPayload } = payload as WebsiteEvent;
-            console.log(event, " received:", eventPayload);
             handleEvent(event, eventPayload);
           })
           .subscribe((status) => {
@@ -245,7 +247,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     const handlePaymentConfirmed = (payload: any) => {
-      if (payload.user_id === user.id) {
+      console.log("PAYMENT_EVENT", payload);
+      if (payload.user_id === user.id && payload.status === "confirmed") {
         console.log(
           "Updating userBalance in realtime provider (payment):",
           payload.new_balance
@@ -258,7 +261,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     };
 
     const unsubscribePayment = subscribe(
-      "PAYMENT_CONFIRMED",
+      "PAYMENT_EVENT",
       handlePaymentConfirmed
     );
 

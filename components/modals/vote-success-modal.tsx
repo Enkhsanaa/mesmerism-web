@@ -1,4 +1,5 @@
 "use client";
+import { useModal } from "@/app/(dashboard)/modal-provider";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,17 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-
-interface VoteResultModalProps {
-  isOpen: boolean;
-  onClose?: (reason?: string) => void;
-  creator?: {
-    username: string;
-    avatar: string;
-    quote: string;
-    coins: number;
-  };
-}
 
 // Animated Avatar Component that eats coins
 function AnimatedAvatar({
@@ -56,28 +46,28 @@ function AnimatedAvatar({
   }));
 
   return (
-    <div className="relative flex flex-col items-center gap-2">
+    <div className="relative flex flex-col items-center gap-2 isolate">
       {/* Dropping Coins */}
       <AnimatePresence>
         {isEating &&
           coinPositions.map((coin) => (
             <motion.div
               key={coin.id}
-              className="absolute top-0 z-10"
+              className="absolute top-0 -z-10"
               initial={{
-                y: -100,
+                y: -200,
                 x: coin.x,
                 opacity: 0,
                 scale: 0.8,
               }}
               animate={{
-                y: 60, // Drop to avatar position
+                y: 40, // Drop to avatar position
                 x: coin.x,
                 opacity: [0, 1, 1, 0],
                 scale: [0.8, 1, 1, 0.6],
               }}
               exit={{
-                y: 60,
+                y: 40,
                 x: coin.x,
                 opacity: 0,
                 scale: 0.6,
@@ -143,7 +133,7 @@ function AnimatedAvatar({
           opacity: eatenCoins > 0 ? 1 : 0,
           y: eatenCoins > 0 ? 0 : 10,
         }}
-        transition={{ duration: 0.5, delay: 0.5 }}
+        transition={{ duration: 0.5, delay: 0 }}
       >
         +{eatenCoins} coins
       </motion.div>
@@ -151,28 +141,15 @@ function AnimatedAvatar({
   );
 }
 
-export default function VoteResultModal({
-  isOpen,
-  onClose,
-  creator,
-}: VoteResultModalProps) {
-  if (!isOpen) return null;
+export default function VoteSuccessModal() {
+  const {
+    voteSuccessModalOpen,
+    setVoteSuccessModalOpen,
+    selectedCreator: creator,
+  } = useModal();
+  if (!voteSuccessModalOpen) return null;
 
-  const coins = creator?.coins ? (
-    creator.coins
-  ) : (
-    <span className="bg-red-50 animate-pulse w-8 h-4 rounded-lg inline-block -mb-0.5" />
-  );
-  const username = creator?.username ? (
-    creator.username
-  ) : (
-    <span className="bg-red-50 animate-pulse w-24 h-4 rounded-lg inline-block -mb-0.5" />
-  );
-  const quote = creator?.quote ? (
-    creator.quote
-  ) : (
-    <span className="bg-red-50 animate-pulse w-full h-4 rounded-lg inline-block -mb-0.5" />
-  );
+  const username = creator?.username;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none bg-black/50">
@@ -186,27 +163,29 @@ export default function VoteResultModal({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onClose?.("close")}
+              onClick={() => setVoteSuccessModalOpen(false)}
               className="h-[48px] w-[48px] p-0 hover:bg-[#34373C]"
             >
               <X className="h-[20px] w-[20px]" />
             </Button>
           </div>
           <p className="text-base font-normal w-full">
-            Та амжилттай {coins} coin {username}-д өглөө.
+            Та амжилттай {creator?.received_votes} coin {username}-д өглөө.
           </p>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-4">
           <AnimatedAvatar
-            avatar={creator?.avatar}
+            avatar={creator?.avatar_url ?? ""}
             username={creator?.username}
-            coins={creator?.coins || 0}
+            coins={creator?.received_votes ?? 0}
           />
         </CardContent>
         <CardFooter>
-          <div className="bg-[#34373C] rounded-lg p-6 w-full text-center">
-            <p>{quote}</p>
-          </div>
+          {creator?.quote && (
+            <div className="bg-[#34373C] rounded-lg p-6 w-full text-center">
+              <p>{creator.quote}</p>
+            </div>
+          )}
         </CardFooter>
       </Card>
     </div>

@@ -2,7 +2,7 @@ import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { formatAmount } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import CoinIcon from "../icons/coin";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -18,8 +18,14 @@ import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 
 export default function VoteModal() {
-  const { voteModalOpen, setVoteModalOpen, selectedCreator, setCoinModalOpen } =
-    useModal();
+  const {
+    voteModalOpen,
+    setVoteModalOpen,
+    setVoteSuccessModalOpen,
+    selectedCreator,
+    setCoinModalOpen,
+    setSelectedCreator,
+  } = useModal();
   const {
     user: userOverview,
     supabase,
@@ -28,6 +34,7 @@ export default function VoteModal() {
   } = useRealtime();
   const [selectedCoins, setSelectedCoins] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const coinInputRef = useRef<HTMLInputElement>(null);
 
   if (!voteModalOpen) return null;
 
@@ -76,8 +83,12 @@ export default function VoteModal() {
         return;
       }
 
-      toast.success(`Таны ${votes} саналыг амжилттай хүлээж авлаа!`);
       setVoteModalOpen(false);
+      setSelectedCreator({
+        ...selectedCreator,
+        received_votes: votes,
+      });
+      setVoteSuccessModalOpen(true);
       setSelectedCoins(0);
       refreshUserBalance();
     } catch (error) {
@@ -89,15 +100,24 @@ export default function VoteModal() {
   };
 
   const handleMaxCoins = () => {
-    setSelectedCoins(userOverview?.balance ?? 0);
+    if (coinInputRef.current) {
+      coinInputRef.current.value = (userOverview?.balance ?? 0).toString();
+      setSelectedCoins(userOverview?.balance ?? 0);
+    }
   };
 
   const handleMinusCoins = () => {
-    setSelectedCoins(selectedCoins - 10);
+    if (coinInputRef.current) {
+      coinInputRef.current.value = (selectedCoins - 10).toString();
+      setSelectedCoins(selectedCoins - 10);
+    }
   };
 
   const handlePlusCoins = () => {
-    setSelectedCoins(selectedCoins + 10);
+    if (coinInputRef.current) {
+      coinInputRef.current.value = (selectedCoins + 10).toString();
+      setSelectedCoins(selectedCoins + 10);
+    }
   };
 
   return (
@@ -141,6 +161,7 @@ export default function VoteModal() {
                 <Minus className="h-[20px] w-[20px] text-[#212121]" />
               </Button>
               <Input
+                ref={coinInputRef}
                 type="number"
                 defaultValue={selectedCoins}
                 onChange={(e) => setSelectedCoins(Number(e.target.value))}

@@ -3,7 +3,7 @@ import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { cn, formatAmount } from "@/lib/utils";
 import { CheckIcon, ChevronDown, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CoinIcon from "../icons/coin";
 import Loader from "../icons/loader";
 import { Button } from "../ui/button";
@@ -24,6 +24,13 @@ import { Input } from "../ui/input";
 
 const UNIT_COIN = 500;
 const COIN_OPTIONS = [10, 20, 50, 100];
+
+type PaymentEventPayload = {
+  user_id: string;
+  amount: number;
+  status: "confirmed" | "failed";
+  provider_ref: string;
+};
 
 const CoinOption = ({
   coins,
@@ -73,43 +80,70 @@ const CoinOption = ({
 };
 
 export default function CoinSelectModal() {
-  const { supabase, user, subscribe, unsubscribe } = useRealtime();
+  const { supabase, user, subscribe } = useRealtime();
   const { coinModalOpen, setCoinModalOpen } = useModal();
   const [isWaitingPayment, setIsWaitingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [confirmedAmount, setConfirmedAmount] = useState(0);
+  const [paymentError, setPaymentError] = useState(false);
+  const subscriptionRef = useRef<ReturnType<typeof subscribe> | null>(null);
 
   const [selectedCoins, setSelectedCoins] = useState(0);
 
-  // Listen for payment confirmation events
+  // Unsubscribe from payment events when modal closes
   useEffect(() => {
-    if (!coinModalOpen || !user) return;
-
-    const handlePaymentConfirmed = (payload: any) => {
-      // Only handle events for this user
-      if (payload.user_id === user.id) {
-        setIsWaitingPayment(false);
-        setPaymentSuccess(true);
-        setConfirmedAmount(payload.amount);
-
-        // Auto-close modal after 3 seconds
-        // setTimeout(() => {
-        //   setPaymentSuccess(false);
-        //   setCoinModalOpen(false);
-        //   setSelectedCoins(0);
-        // }, 3000);
+    return () => {
+      console.log("Unsubscribing from payment events");
+      if (subscriptionRef.current) {
+        console.log(
+          "Unsubscribing from payment events",
+          subscriptionRef.current
+        );
+        subscriptionRef.current();
+      } else {
+        console.log("No subscription to unsubscribe from");
       }
     };
+  }, []);
 
-    const unsubscribePayment = subscribe(
-      "PAYMENT_CONFIRMED",
-      handlePaymentConfirmed
+  const handlePaymentEvent = (
+    payload: PaymentEventPayload,
+    providerRef: string
+  ) => {
+    console.log(
+      "handlePaymentEvent: PAYMENT_EVENT caught in the modal",
+      payload,
+      providerRef,
+      user
     );
+    if (!user) return;
+    if (payload.user_id === user.id && payload.provider_ref === providerRef) {
+      if (payload.status === "confirmed") {
+        setIsWaitingPayment(false);
+        setPaymentSuccess(true);
+        setPaymentError(false);
+        setConfirmedAmount(payload.amount);
+      } else if (payload.status === "failed") {
+        setIsWaitingPayment(false);
+        setPaymentSuccess(false);
+        setPaymentError(true);
+        setConfirmedAmount(0);
+      }
+    }
+  };
 
-    return () => {
-      unsubscribePayment();
-    };
-  }, [coinModalOpen, user, subscribe, unsubscribe, setCoinModalOpen]);
+  const handleOpenCloseModal = (open: boolean) => {
+    setCoinModalOpen(open);
+    if (!open) {
+      setSelectedCoins(0);
+      setConfirmedAmount(0);
+      setPaymentError(false);
+      setPaymentSuccess(false);
+    }
+    if (subscriptionRef.current) {
+      subscriptionRef.current();
+    }
+  };
 
   // Reset states when modal opens/closes
   useEffect(() => {
@@ -118,6 +152,7 @@ export default function CoinSelectModal() {
       setPaymentSuccess(false);
       setConfirmedAmount(0);
       setSelectedCoins(0);
+      setPaymentError(false);
     }
   }, [coinModalOpen]);
 
@@ -143,13 +178,18 @@ export default function CoinSelectModal() {
       console.error("coin_topups insert error", error);
     }
 
-    if (data) {
-      console.log("coin_topups insert data", data);
+    if (data && data.length > 0 && data[0].provider_ref) {
+      console.log("coin_topups insert data", data[0]);
+      console.log("paymentRef set", data[0].provider_ref);
+      subscriptionRef.current = subscribe("PAYMENT_EVENT", (payload) => {
+        console.log("PAYMENT_EVENT caught in the modal", payload);
+        handlePaymentEvent(payload, data[0].provider_ref);
+      });
     }
   };
 
   return (
-    <Dialog open={coinModalOpen} onOpenChange={setCoinModalOpen}>
+    <Dialog open={coinModalOpen} onOpenChange={handleOpenCloseModal}>
       <DialogTitle className="sr-only">Coin авах</DialogTitle>
       <DialogContent>
         <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none bg-black/50">
@@ -162,7 +202,7 @@ export default function CoinSelectModal() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setCoinModalOpen(false)}
+                  onClick={() => handleOpenCloseModal(false)}
                   className="h-[48px] w-[48px] p-0text-white hover:bg-[#34373C]"
                 >
                   <X className="h-[20px] w-[20px]" />
@@ -192,6 +232,20 @@ export default function CoinSelectModal() {
                     </p>
                     <p className="text-sm text-gray-400 mt-2">
                       Та өөрийн дэмжиж буй Youtuber дээ саналаа өгөөрэй
+                    </p>
+                  </div>
+                </div>
+              ) : paymentError ? (
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="size-16 bg-red-500 rounded-full flex items-center justify-center">
+                    <X className="h-[32px] w-[32px] text-white" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-white mb-2">
+                      Төлбөр амжилтгүй боллоо
+                    </p>
+                    <p className="text-base text-white">
+                      Та дахин оролдоно уу.
                     </p>
                   </div>
                 </div>
@@ -258,12 +312,21 @@ export default function CoinSelectModal() {
                 >
                   Хаах
                 </Button>
+              ) : paymentError ? (
+                <Button
+                  variant="ghost"
+                  className="w-[89px]"
+                  onClick={() => handleOpenCloseModal(false)}
+                  disabled={isWaitingPayment}
+                >
+                  Хаах
+                </Button>
               ) : (
                 <>
                   <Button
                     variant="ghost"
                     className="w-[89px]"
-                    onClick={() => setCoinModalOpen(false)}
+                    onClick={() => handleOpenCloseModal(false)}
                     disabled={isWaitingPayment}
                   >
                     Болих

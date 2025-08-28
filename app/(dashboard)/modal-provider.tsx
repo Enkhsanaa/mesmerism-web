@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 
+type Creator = DbUser & { received_votes: number; quote: string };
+
 interface ModalContextType {
   voteModalOpen: boolean;
   setVoteModalOpen: (open: boolean) => void;
@@ -11,8 +13,8 @@ interface ModalContextType {
   setWaitPaymentModalOpen: (open: boolean) => void;
   voteSuccessModalOpen: boolean;
   setVoteSuccessModalOpen: (open: boolean) => void;
-  selectedCreator: DbUser | null;
-  setSelectedCreator: (creator: DbUser | null) => void;
+  selectedCreator: Creator | null;
+  setSelectedCreator: (creator: Creator | null) => void;
 }
 
 const ModalContext = createContext<ModalContextType | null>(null);
@@ -30,7 +32,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [coinModalOpen, setCoinModalOpen] = useState(false);
   const [waitPaymentModalOpen, setWaitPaymentModalOpen] = useState(false);
   const [voteSuccessModalOpen, setVoteSuccessModalOpen] = useState(false);
-  const [selectedCreator, setSelectedCreator] = useState<DbUser | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
 
   // Enhanced setter functions with logging
   const handleSetVoteModalOpen = (open: boolean) => {
@@ -38,7 +40,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
     setVoteModalOpen(open);
   };
 
-  const handleSetSelectedCreator = (creator: DbUser | null) => {
+  const handleSetSelectedCreator = (creator: Creator | null) => {
     console.log("Setting selected creator:", creator);
     setSelectedCreator(creator);
   };

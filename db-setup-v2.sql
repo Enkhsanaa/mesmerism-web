@@ -562,11 +562,28 @@ BEGIN
           'provider_ref', new.provider_ref,
           'confirmed_at', NOW()
         ),
-        'PAYMENT_CONFIRMED',
+        'PAYMENT_EVENT',
         'LIVE_EVENTS',
         false
       );
     END IF;
+  END IF;
+  IF new.status = 'failed' AND (old.status IS DISTINCT FROM 'failed') THEN
+    -- Broadcast the payment failure event
+    perform realtime.send(
+      jsonb_build_object(
+        'user_id', new.user_id,
+        'topup_id', new.id,
+        'amount', new.amount,
+        'status', new.status,
+        'provider', new.provider,
+        'provider_ref', new.provider_ref,
+        'confirmed_at', NOW()
+      ),
+      'PAYMENT_EVENT',
+      'LIVE_EVENTS',
+      false
+    );
   END IF;
   RETURN new;
 END;

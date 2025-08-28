@@ -8,6 +8,7 @@ import { UserSuspensionListener } from "@/components/user-suspension-listener";
 import { Toaster } from "sonner";
 import { ModalProvider } from "./modal-provider";
 import { RealtimeProvider } from "./realtime-provider";
+import VoteSuccessModal from "@/components/modals/vote-success-modal";
 
 export default function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default function DashboardLayout({
         </div>
         <VoteModal />
         <CoinSelectModal />
+        <VoteSuccessModal />
       </ModalProvider>
     </RealtimeProvider>
   );
