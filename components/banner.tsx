@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { EditBannerModal } from "@/components/modals/edit-banner-modal";
 import { Button } from "@/components/ui/button";
 import { useBannerUrl } from "@/hooks/use-banner-url";
@@ -15,7 +15,7 @@ import {
 } from "./ui/dropdown-menu";
 
 export default function Banner() {
-  const { user: userOverview } = useRealtimeStore();
+  const { user: userOverview } = useRealtime();
   const isAdmin = userOverview?.roles.includes("admin");
   const { bannerUrl, loading: bannerLoading } = useBannerUrl();
 

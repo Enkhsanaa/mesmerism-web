@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Loader2 } from "lucide-react";
 import { Suspense, useActionState, useState } from "react";
 import useSWR from "swr";
+import { useRealtime } from "../realtime-provider";
 import { updateProfile } from "./actions";
 
 type ActionState = {
@@ -175,7 +175,7 @@ function AccountForm({
 }
 
 function AccountFormWithData({ state }: { state: ActionState }) {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const { data: user } = useSWR<DbUserOverview>("/api/user", async () => {
     const { data: userData, error: userError } = await supabase.rpc(
       "get_self_overview"

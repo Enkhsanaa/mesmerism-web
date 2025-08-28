@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,7 +52,7 @@ export default function UserVotesModal({
   isOpen,
   onClose,
 }: UserVotesModalProps) {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const [votes, setVotes] = useState<VoteOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

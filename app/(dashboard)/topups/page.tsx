@@ -16,7 +16,7 @@ import {
 import { Check, RefreshCw, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "../realtime-provider";
 
 interface CoinTopup {
   id: number;
@@ -35,7 +35,7 @@ interface CoinTopup {
 }
 
 export default function TopupsPage() {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const [topups, setTopups] = useState<CoinTopup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +51,8 @@ export default function TopupsPage() {
   const fetchTopups = async () => {
     setLoading(true);
     try {
+      console.log("fetching topups");
+      console.log(supabase);
       const { data, error } = await supabase
         .from("coin_topups")
         .select(

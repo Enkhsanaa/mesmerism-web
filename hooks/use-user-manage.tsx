@@ -1,8 +1,8 @@
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { toast } from "sonner";
 
 export const useUserManage = () => {
-  const { supabase, user } = useRealtimeStore();
+  const { supabase, user } = useRealtime();
 
   const banUser = async (userId: string | null) => {
     if (!userId) return;

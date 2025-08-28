@@ -1,7 +1,7 @@
 "use client";
 
 import { useModal } from "@/app/(dashboard)/modal-provider";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { formatAmount } from "@/lib/utils";
 import {
   Calendar,
@@ -27,7 +27,7 @@ import {
 
 export default function HeaderClient() {
   const { setCoinModalOpen } = useModal();
-  const { user: userOverview, supabase } = useRealtimeStore();
+  const { user: userOverview, supabase } = useRealtime();
   const isAdmin = userOverview?.roles.includes("admin");
 
   return (

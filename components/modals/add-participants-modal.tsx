@@ -1,5 +1,6 @@
 "use client";
 
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { Search, UserMinus, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ export default function AddParticipantsModal({
   onClose,
   onParticipantsUpdated,
 }: AddParticipantsModalProps) {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);

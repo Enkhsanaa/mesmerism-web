@@ -1,6 +1,6 @@
 "use client";
 
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,7 +28,7 @@ export function EditWeekModal({
   onClose,
   onWeekUpdated,
 }: EditWeekModalProps) {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     week_number: 1,

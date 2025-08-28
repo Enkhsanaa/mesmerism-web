@@ -1,8 +1,7 @@
 "use client";
 
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
-import { createClient } from "@/lib/supabase/client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ---------- Wire & UI types ----------
 
@@ -43,8 +42,7 @@ interface UseRealtimeChatOptions {
 export function useRealtimeChat(options: UseRealtimeChatOptions = {}) {
   const { pageSize = 30, includeDeleted = false } = options;
 
-  const supabase = useMemo(() => createClient(), []);
-  const { subscribe, unsubscribe, isConnected } = useRealtimeStore();
+  const { supabase, subscribe, unsubscribe, isConnected } = useRealtime();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);

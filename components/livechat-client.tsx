@@ -1,5 +1,6 @@
 "use client";
 
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { RealtimeChat } from "@/components/realtime-chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
 import { MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,7 +26,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - Touch-friendly mobile interface
  */
 export function LivechatClient() {
-  const { user, isConnected } = useRealtimeStore();
+  const { user, isConnected } = useRealtime();
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);

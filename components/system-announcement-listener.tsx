@@ -1,9 +1,9 @@
-import { useRealtimeStore, WebsiteEvent } from "@/lib/stores/realtime-store";
+import { useRealtime, WebsiteEvent } from "@/app/(dashboard)/realtime-provider";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export function SystemAnnouncementListener() {
-  const { subscribe, unsubscribe } = useRealtimeStore();
+  const { subscribe, unsubscribe } = useRealtime();
 
   useEffect(() => {
     const handleSystemAnnouncement = (

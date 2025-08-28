@@ -1,10 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useBannerUrl } from "@/hooks/use-banner-url";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Image from "next/image";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface EditBannerModalProps {
@@ -23,7 +22,7 @@ interface EditBannerModalProps {
 }
 
 export function EditBannerModal({ open, onOpenChange }: EditBannerModalProps) {
-  const { supabase, user } = useRealtimeStore();
+  const { supabase, user } = useRealtime();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);

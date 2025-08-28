@@ -1,7 +1,6 @@
 "use client";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { useRealtimeStore } from "@/lib/stores/realtime-store";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,9 +15,10 @@ import {
 import AddParticipantsModal from "@/components/modals/add-participants-modal";
 import { EditWeekModal } from "@/components/modals/edit-week-modal";
 import { Check, Users, X } from "lucide-react";
+import { useRealtime } from "../realtime-provider";
 
 export default function WeeksPage() {
-  const { supabase } = useRealtimeStore();
+  const { supabase } = useRealtime();
   const [weeks, setWeeks] = useState<DbCompetitionWeek[]>([]);
   const [editingWeek, setEditingWeek] = useState<DbCompetitionWeek | null>(
     null
