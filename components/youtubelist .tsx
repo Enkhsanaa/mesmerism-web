@@ -305,7 +305,7 @@ export default function Youtubelist() {
   console.log("rerendering");
 
   return (
-    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8">
+    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8 max-h-[80vh] overflow-hidden">
       <motion.div
         className="relative w-full m-0 p-0"
         initial={{ y: -20, opacity: 0 }}

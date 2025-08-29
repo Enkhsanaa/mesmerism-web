@@ -29,6 +29,7 @@ type DbUserOverview = {
 };
 
 type LeaderboardEntry = {
+  week_id: number;
   creator_user_id: string;
   percent: number;
   rank: number;
@@ -48,6 +49,21 @@ type WeekStanding = {
   bubbleText: string | null;
   avatarUrl: string | null;
   coverImageUrl: string | null;
+};
+
+type DbProfile = {
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  bubble_text: string;
+  title: string;
+  short_intro: string;
+  description: string;
+  cover_image_url: string;
+  avatar_url: string;
+  intro_video_url: string;
+  social_links: Record<string, string>;
+  subscriber_count: number;
 };
 
 type DbCompetitionWeek = {

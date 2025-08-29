@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSupabase } from "../supabase-provider";
 import { initializeWeekStore } from "@/hooks/use-week-store";
 import { initializeUserStore } from "@/hooks/use-user-store";
+import { initializeCreatorProfileStore } from "@/hooks/use-creator-profile-store";
 
 export type WebsiteEvent =
   | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
@@ -179,6 +180,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     setupChannel();
     initializeWeekStore(supabase);
     initializeUserStore(supabase);
+    initializeCreatorProfileStore(supabase);
 
     const {
       data: { subscription: authSubscription },
