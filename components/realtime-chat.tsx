@@ -173,7 +173,11 @@ export const RealtimeChat = ({
               !prevMessage ||
               prevMessage.author_user_id !== message.author_user_id;
 
-            if (message.author_user_id !== userOverview?.id) {
+            if (
+              !isAdmin &&
+              !isModerator &&
+              message.author_user_id !== userOverview?.id
+            ) {
               return (
                 <div
                   key={message.id}
