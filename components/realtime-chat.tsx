@@ -28,6 +28,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./ui/context-menu";
+import { useUserStore } from "@/hooks/use-user-store";
 
 interface RealtimeChatProps {
   onMessage?: (messages: ChatMessage[]) => void;
@@ -38,9 +39,9 @@ export const RealtimeChat = ({
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { user } = useRealtime();
-  const isAdmin = user?.roles.includes("admin");
-  const isModerator = user?.roles.includes("moderator");
+  const { userOverview } = useUserStore();
+  const isAdmin = userOverview?.roles.includes("admin");
+  const isModerator = userOverview?.roles.includes("moderator");
   const { banUser, timeoutUser, unbanUser } = useUserManage();
   const {
     messages: dbMessages,
@@ -163,14 +164,14 @@ export const RealtimeChat = ({
               !prevMessage ||
               prevMessage.author_user_id !== message.author_user_id;
 
-            if (message.author_user_id !== user?.id) {
+            if (message.author_user_id !== userOverview?.id) {
               return (
                 <div
                   key={message.id}
                   className="animate-in fade-in slide-in-from-bottom-4 duration-300"
                 >
                   <ChatMessageItem
-                    isOwnMessage={message.author_user_id === user?.id}
+                    isOwnMessage={message.author_user_id === userOverview?.id}
                     message={message}
                     showHeader={showHeader}
                   />
@@ -186,7 +187,7 @@ export const RealtimeChat = ({
                 <ContextMenu>
                   <ContextMenuTrigger>
                     <ChatMessageItem
-                      isOwnMessage={message.author_user_id === user?.id}
+                      isOwnMessage={message.author_user_id === userOverview?.id}
                       message={message}
                       showHeader={showHeader}
                     />

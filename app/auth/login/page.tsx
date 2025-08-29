@@ -1,15 +1,16 @@
 "use client";
 
+import GoogleLoginButton from "@/components/google-login-button";
 import MesmerismIcon from "@/components/icons/mesmerism";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { login } from "./actions";
-import GoogleLoginButton from "@/components/google-login-button";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -150,7 +151,12 @@ export default function Login() {
             Бүртгүүлэх
           </Button>
         </form>
-        <div className="w-full h-[1px] bg-[#34373C]" />
+        <div className="relative flex items-center justify-center w-full">
+          <Separator className="absolute inset-x-0" />
+          <div className="relative z-10 bg-card-background px-4 text-sm text-muted-foreground">
+            эсвэл
+          </div>
+        </div>
         <GoogleLoginButton />
       </CardContent>
     </Card>

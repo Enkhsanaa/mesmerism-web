@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUserStore } from "@/hooks/use-user-store";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,7 +23,8 @@ interface EditBannerModalProps {
 }
 
 export function EditBannerModal({ open, onOpenChange }: EditBannerModalProps) {
-  const { supabase, user } = useRealtime();
+  const { supabase } = useRealtime();
+  const { userOverview } = useUserStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -31,7 +33,7 @@ export function EditBannerModal({ open, onOpenChange }: EditBannerModalProps) {
   const updateBanner = useCallback(
     async (bannerFile: File) => {
       try {
-        const filePath = `${user?.id}/banner/home-banner${
+        const filePath = `${userOverview?.id}/banner/home-banner${
           bannerFile.name.includes(".")
             ? bannerFile.name.slice(bannerFile.name.lastIndexOf("."))
             : ".png"

@@ -1,10 +1,12 @@
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { useEffect, useState } from "react";
+import { useWeekStore } from "./use-week-store";
 
 export const useLeaderboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [creators, setCreators] = useState<WeekStanding[]>([]);
-  const { supabase, currentWeekId, subscribe } = useRealtime();
+  const { supabase, subscribe } = useRealtime();
+  const { currentWeekId } = useWeekStore();
 
   useEffect(() => {
     const setupLeaderboard = async () => {

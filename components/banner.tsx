@@ -1,9 +1,9 @@
 "use client";
 
-import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { EditBannerModal } from "@/components/modals/edit-banner-modal";
 import { Button } from "@/components/ui/button";
 import { useBannerUrl } from "@/hooks/use-banner-url";
+import { useUserStore } from "@/hooks/use-user-store";
 import { Edit, MoreVertical, Upload } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -15,7 +15,7 @@ import {
 } from "./ui/dropdown-menu";
 
 export default function Banner() {
-  const { user: userOverview } = useRealtime();
+  const { userOverview } = useUserStore();
   const isAdmin = userOverview?.roles.includes("admin");
   const { bannerUrl, loading: bannerLoading } = useBannerUrl();
 

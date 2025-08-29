@@ -557,6 +557,7 @@ BEGIN
           'user_id', new.user_id,
           'topup_id', new.id,
           'amount', new.amount,
+          'status', new.status,
           'new_balance', v_new_balance,
           'provider', new.provider,
           'provider_ref', new.provider_ref,
@@ -569,12 +570,17 @@ BEGIN
     END IF;
   END IF;
   IF new.status = 'failed' AND (old.status IS DISTINCT FROM 'failed') THEN
+    -- Get the user's new balance
+    SELECT COALESCE(SUM(delta), 0) INTO v_new_balance
+    FROM public.coin_ledger
+    WHERE user_id = new.user_id;
     -- Broadcast the payment failure event
     perform realtime.send(
       jsonb_build_object(
         'user_id', new.user_id,
         'topup_id', new.id,
         'amount', new.amount,
+        'new_balance', v_new_balance,
         'status', new.status,
         'provider', new.provider,
         'provider_ref', new.provider_ref,

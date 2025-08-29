@@ -1,9 +1,10 @@
 "use client";
 import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useUserStore } from "@/hooks/use-user-store";
 import { cn, formatAmount } from "@/lib/utils";
 import { CheckIcon, ChevronDown, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CoinIcon from "../icons/coin";
 import Loader from "../icons/loader";
 import { Button } from "../ui/button";
@@ -30,6 +31,7 @@ type PaymentEventPayload = {
   amount: number;
   status: "confirmed" | "failed";
   provider_ref: string;
+  new_balance: number;
 };
 
 const CoinOption = ({
@@ -80,7 +82,8 @@ const CoinOption = ({
 };
 
 export default function CoinSelectModal() {
-  const { supabase, user, subscribe } = useRealtime();
+  const { supabase, subscribe } = useRealtime();
+  const { userOverview, setUserBalance } = useUserStore();
   const { coinModalOpen, setCoinModalOpen } = useModal();
   const [isWaitingPayment, setIsWaitingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -114,20 +117,25 @@ export default function CoinSelectModal() {
       "handlePaymentEvent: PAYMENT_EVENT caught in the modal",
       payload,
       providerRef,
-      user
+      userOverview
     );
-    if (!user) return;
-    if (payload.user_id === user.id && payload.provider_ref === providerRef) {
+    if (!userOverview) return;
+    if (
+      payload.user_id === userOverview.id &&
+      payload.provider_ref === providerRef
+    ) {
       if (payload.status === "confirmed") {
         setIsWaitingPayment(false);
         setPaymentSuccess(true);
         setPaymentError(false);
         setConfirmedAmount(payload.amount);
+        setUserBalance(payload.new_balance);
       } else if (payload.status === "failed") {
         setIsWaitingPayment(false);
         setPaymentSuccess(false);
         setPaymentError(true);
         setConfirmedAmount(0);
+        setUserBalance(payload.new_balance);
       }
     }
   };
@@ -166,7 +174,7 @@ export default function CoinSelectModal() {
     const { data, error } = await supabase
       .from("coin_topups")
       .insert({
-        user_id: user?.id,
+        user_id: userOverview?.id,
         amount: value,
         status: "pending",
         provider: "qpay",

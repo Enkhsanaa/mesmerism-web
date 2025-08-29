@@ -1,5 +1,7 @@
 import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
+import { useUserStore } from "@/hooks/use-user-store";
+import { useWeekStore } from "@/hooks/use-week-store";
 import { formatAmount } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
 import { useRef, useState } from "react";
@@ -26,12 +28,9 @@ export default function VoteModal() {
     setCoinModalOpen,
     setSelectedCreator,
   } = useModal();
-  const {
-    user: userOverview,
-    supabase,
-    currentWeekId,
-    refreshUserBalance,
-  } = useRealtime();
+  const { supabase } = useRealtime();
+  const { userOverview, setUserBalance } = useUserStore();
+  const { currentWeekId } = useWeekStore();
   const [selectedCoins, setSelectedCoins] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const coinInputRef = useRef<HTMLInputElement>(null);
@@ -88,9 +87,9 @@ export default function VoteModal() {
         ...selectedCreator,
         received_votes: votes,
       });
+      setUserBalance((userOverview?.balance ?? 0) - votes);
       setVoteSuccessModalOpen(true);
       setSelectedCoins(0);
-      refreshUserBalance();
     } catch (error) {
       console.error("Vote submission error:", error);
       toast.error("Failed to submit vote");

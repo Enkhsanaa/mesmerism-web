@@ -5,22 +5,12 @@ import { Press_Start_2P } from "next/font/google";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
+import { useWeekStore } from "@/hooks/use-week-store";
 
 const pressStart2P = Press_Start_2P({ subsets: ["latin"], weight: "400" });
 
-interface CompetitionWeek {
-  id: number;
-  week_number: number;
-  title: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: boolean;
-}
-
 export default function Prize() {
-  const { supabase, currentWeekId, setCurrentWeekId } = useRealtime();
-  const [weeks, setWeeks] = useState<CompetitionWeek[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentWeekId, setCurrentWeekId, weeks } = useWeekStore();
   const [totalPrize, setTotalPrize] = useState(15000000); // Default value
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -29,35 +19,6 @@ export default function Prize() {
     src: "/Question.png", // Fixed path - removed /public/
     fallback: "?",
   };
-
-  useEffect(() => {
-    const fetchWeeks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("competition_weeks")
-          .select("id, week_number, title, starts_at, ends_at, is_active")
-          .order("week_number", { ascending: true });
-
-        if (error) {
-          console.error("Error fetching weeks:", error);
-          return;
-        }
-
-        setWeeks(data || []);
-
-        // If no current week is set but we have weeks, set the first week as current
-        if (!currentWeekId && data && data.length > 0) {
-          setCurrentWeekId(data[0].id);
-        }
-      } catch (error) {
-        console.error("Error fetching weeks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeeks();
-  }, [supabase, currentWeekId]);
 
   // Update time every second for live countdown
   useEffect(() => {
@@ -91,7 +52,7 @@ export default function Prize() {
 
   const activeWeekData = weeks.find((week) => week.id === currentWeekId);
 
-  if (loading) {
+  if (!weeks.length) {
     return (
       <div
         className="flex justify-center py-4 w-full rounded-3xl"

@@ -1,9 +1,11 @@
 import { useRealtime, WebsiteEvent } from "@/app/(dashboard)/realtime-provider";
+import { useUserStore } from "@/hooks/use-user-store";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export function UserSuspensionListener() {
-  const { user, subscribe, unsubscribe } = useRealtime();
+  const { subscribe, unsubscribe } = useRealtime();
+  const { userOverview } = useUserStore();
 
   const handleSuspension = (suspension: {
     suspended: boolean;
@@ -41,21 +43,21 @@ export function UserSuspensionListener() {
   };
 
   useEffect(() => {
-    if (user?.suspended) {
+    if (userOverview?.suspended) {
       handleSuspension({
-        suspended: user.suspended,
-        reason: user.suspension_reason,
-        expires_at: user.suspension_expires_at,
+        suspended: userOverview.suspended,
+        reason: userOverview.suspension_reason,
+        expires_at: userOverview.suspension_expires_at,
       });
     }
-  }, [user]);
+  }, [userOverview]);
 
   useEffect(() => {
     const handleSystemAnnouncement = (
       payload: Extract<WebsiteEvent, { event: "USER_SUSPENSION" }>["payload"]
     ) => {
       if (
-        payload.data.target_user_id === user?.id &&
+        payload.data.target_user_id === userOverview?.id &&
         !payload.cleared_suspension
       ) {
         handleSuspension({
@@ -64,7 +66,7 @@ export function UserSuspensionListener() {
           expires_at: payload.data.expires_at,
         });
       } else if (
-        payload.data.target_user_id === user?.id &&
+        payload.data.target_user_id === userOverview?.id &&
         payload.cleared_suspension
       ) {
         toast.success("Хэрэглэгчийн бан-г гаргалаа", {

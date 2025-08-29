@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useUserStore } from "@/hooks/use-user-store";
 import { MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -26,10 +27,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - Touch-friendly mobile interface
  */
 export function LivechatClient() {
-  const { user, isConnected } = useRealtime();
+  const { isConnected } = useRealtime();
+  const { userOverview } = useUserStore();
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  console.log("rerendering live chat client");
 
   // Reset unread state when dialog opens
   useEffect(() => {
@@ -120,12 +123,14 @@ export function LivechatClient() {
   );
 
   // Show loading state while connecting
-  if (!user || !isConnected) {
+  if (!userOverview || !isConnected) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Холбогдож байна...</p>
+          <p>User: {JSON.stringify(userOverview)}</p>
+          <p>Is Connected: {isConnected ? "Yes" : "No"}</p>
         </div>
       </div>
     );

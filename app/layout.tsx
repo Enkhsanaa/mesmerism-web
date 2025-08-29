@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
 import { SWRConfig } from "swr";
+import { SupabaseProvider } from "./supabase-provider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -34,7 +35,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Mesmerism" />
       </head>
       <body className={`${manrope.variable} ${geistMono.variable} antialiased`}>
-        <SWRConfig>{children}</SWRConfig>
+        <SWRConfig>
+          <SupabaseProvider>{children}</SupabaseProvider>
+        </SWRConfig>
       </body>
     </html>
   );

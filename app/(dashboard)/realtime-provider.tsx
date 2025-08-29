@@ -1,9 +1,11 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useSupabase } from "../supabase-provider";
+import { initializeWeekStore } from "@/hooks/use-week-store";
+import { initializeUserStore } from "@/hooks/use-user-store";
 
 export type WebsiteEvent =
   | { type: "broadcast"; event: "CHAT_MESSAGE"; payload: any }
@@ -22,12 +24,8 @@ export type WebsiteEvent =
 
 interface RealtimeContextType {
   supabase: SupabaseClient;
-  user: DbUserOverview | null;
-  currentWeekId: number;
   isConnected: boolean;
 
-  refreshUserBalance: () => Promise<void>;
-  setCurrentWeekId: (weekId: number) => void;
   subscribe: (
     eventType: WebsiteEvent["event"],
     callback: (payload: any) => void
@@ -49,11 +47,9 @@ export function useRealtime() {
 }
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-  const supabase = useMemo(() => createClient(), []);
+  const { supabase } = useSupabase();
   const router = useRouter();
   const [isConnected, setIsConnected] = useState(false);
-  const [user, setUser] = useState<DbUserOverview | null>(null);
-  const [currentWeekId, setCurrentWeekId] = useState<number>(1);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   // Event subscribers - map of event type to array of callbacks
@@ -116,6 +112,8 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    if (!supabase) return;
+
     let isCancelled = false;
 
     const setupChannel = async () => {
@@ -125,31 +123,6 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         if (session.error) {
           console.error("Error getting session:", session.error);
           return;
-        }
-
-        const { data: userData, error: userError } = await supabase.rpc(
-          "get_self_overview"
-        );
-        if (userError) {
-          console.error("Error loading user data:", userError);
-          return;
-        }
-
-        if (userData) {
-          setUser(userData);
-        }
-
-        const { data: currentWeekId } = await supabase
-          .from("competition_weeks")
-          .select("id")
-          .eq("is_active", true)
-          .lte("starts_at", new Date().toISOString())
-          .gte("ends_at", new Date().toISOString())
-          .order("starts_at", { ascending: false, nullsFirst: true })
-          .limit(1)
-          .maybeSingle();
-        if (currentWeekId) {
-          setCurrentWeekId(currentWeekId.id);
         }
 
         if (!session.data.session?.access_token) {
@@ -189,8 +162,10 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           })
           .subscribe((status) => {
             console.log("Realtime subscription status:", status);
-            if (status === "SUBSCRIBED" && !isCancelled) {
+            if (status === "SUBSCRIBED") {
               setIsConnected(true);
+            } else {
+              setIsConnected(false);
             }
           });
 
@@ -202,12 +177,14 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     };
 
     setupChannel();
+    initializeWeekStore(supabase);
+    initializeUserStore(supabase);
 
     const {
       data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange(async (event, _session) => {
+      console.log("authStateChange", event, _session);
       if (event === "SIGNED_OUT") {
-        setUser(null);
         router.push("/");
       }
     });
@@ -219,80 +196,20 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         console.log("Removing realtime channel");
         supabase.removeChannel(channel);
         setChannel(null);
+        authSubscription.unsubscribe();
       }
-      authSubscription.unsubscribe();
     };
   }, [supabase]);
-
-  const refreshUserBalance = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from("user_coin_balances")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single<{ balance: number }>();
-    if (error) {
-      console.error("Error refreshing user balance:", error);
-    }
-    if (data) {
-      setUser({
-        ...user,
-        balance: data.balance,
-      });
-    }
-  };
-
-  // Separate useEffect to handle balance updates from realtime events
-  useEffect(() => {
-    if (!user) return;
-
-    const handlePaymentConfirmed = (payload: any) => {
-      console.log("PAYMENT_EVENT", payload);
-      if (payload.user_id === user.id && payload.status === "confirmed") {
-        console.log(
-          "Updating userBalance in realtime provider (payment):",
-          payload.new_balance
-        );
-        setUser({
-          ...user,
-          balance: payload.new_balance || 0,
-        });
-      }
-    };
-
-    const unsubscribePayment = subscribe(
-      "PAYMENT_EVENT",
-      handlePaymentConfirmed
-    );
-
-    return () => {
-      unsubscribePayment();
-    };
-  }, [user, subscribe, supabase]);
 
   const contextValue: RealtimeContextType = useMemo(
     () => ({
       supabase,
-      user,
-      currentWeekId,
       isConnected,
 
-      refreshUserBalance,
-      setCurrentWeekId,
       subscribe,
       unsubscribe,
     }),
-    [
-      supabase,
-      user,
-      currentWeekId,
-      isConnected,
-
-      refreshUserBalance,
-      setCurrentWeekId,
-      subscribe,
-      unsubscribe,
-    ]
+    [supabase, isConnected, subscribe, unsubscribe]
   );
 
   return (

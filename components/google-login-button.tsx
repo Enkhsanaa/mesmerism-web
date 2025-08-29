@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
-import Script from "next/script";
+import { useSupabase } from "@/app/supabase-provider";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import Script from "next/script";
+import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
 
 declare global {
   interface Window {
@@ -32,17 +34,22 @@ interface CredentialResponse {
 }
 
 export default function GoogleLoginButton() {
-  const supabase = createClient();
+  const { supabase } = useSupabase();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const initializeGoogle = async () => {
     const [nonce, hashedNonce] = await generateNonce();
     if (window.hashedNonce !== hashedNonce) {
       window.hashedNonce = hashedNonce;
+      const isFedCMSupported =
+        "IdentityCredential" in window && "IdentityProvider" in window;
       window.google.accounts.id.initialize({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID, // Your client ID from Google Cloud
         callback: async (response: CredentialResponse) => {
           try {
+            setIsLoggingIn(true);
             // send id token returned in response.credential to supabase
             const { data, error } = await supabase.auth.signInWithIdToken({
               provider: "google",
@@ -56,11 +63,12 @@ export default function GoogleLoginButton() {
             router.push("/");
           } catch (error) {
             console.error("Error logging in with Google One Tap", error);
+            setIsLoggingIn(false);
           }
         }, // Handler to process login token
         nonce: hashedNonce,
         // with chrome's removal of third-party cookies, we need to use FedCM instead (https://developers.google.com/identity/gsi/web/guides/fedcm-migration)
-        use_fedcm_for_prompt: true,
+        use_fedcm_for_prompt: isFedCMSupported,
       });
     }
 
@@ -75,6 +83,9 @@ export default function GoogleLoginButton() {
         shape: "rectangular",
       }
     );
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
 
     window.google.accounts.id.prompt();
   };
@@ -87,12 +98,26 @@ export default function GoogleLoginButton() {
         initializeGoogle();
       }
     }, 300);
-  }, []); //eslint-disable-line
+  }, []);
 
   return (
-    <>
+    <div className="grid grid-cols-1 grid-rows-1">
       <Script src="https://accounts.google.com/gsi/client" async defer></Script>
-      <div id="google-login-btn" className="w-full"></div>
-    </>
+      <div
+        id="google-login-btn"
+        className="col-start-1 col-end-2 row-start-1 row-end-2 h-[38px] w-[231px]"
+      ></div>
+      {isLoading && (
+        <div className="h-[38px] w-[210px] bg-gray-200 rounded-2xl col-start-1 col-end-2 row-start-1 row-end-2" />
+      )}
+      {isLoggingIn && (
+        <Button
+          variant="glass"
+          className="col-start-1 col-end-2 row-start-1 row-end-2 h-[38px] w-[210px]"
+        >
+          <Loader2 className="animate-spin" /> Нэвтэрж байна...
+        </Button>
+      )}
+    </div>
   );
 }

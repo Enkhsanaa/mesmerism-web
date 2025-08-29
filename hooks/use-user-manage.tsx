@@ -1,14 +1,16 @@
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { toast } from "sonner";
+import { useUserStore } from "./use-user-store";
 
 export const useUserManage = () => {
-  const { supabase, user } = useRealtime();
+  const { supabase } = useRealtime();
+  const { userOverview } = useUserStore();
 
   const banUser = async (userId: string | null) => {
     if (!userId) return;
     const { error } = await supabase.from("user_suspensions").insert({
       target_user_id: userId,
-      created_by: user?.id,
+      created_by: userOverview?.id,
       reason: "Та чатнаас бандуулсан.",
       expires_at: null,
     });
@@ -26,7 +28,7 @@ export const useUserManage = () => {
     if (!userId) return;
     const { error } = await supabase.from("user_suspensions").insert({
       target_user_id: userId,
-      created_by: user?.id,
+      created_by: userOverview?.id,
       reason: `Та чатнаас ${timeoutLabel} бандуулсан.`,
       expires_at: new Date(Date.now() + timeout * 1000),
     });
