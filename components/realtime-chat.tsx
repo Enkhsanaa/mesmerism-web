@@ -29,6 +29,13 @@ import {
   ContextMenuTrigger,
 } from "./ui/context-menu";
 import { useUserStore } from "@/hooks/use-user-store";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 interface RealtimeChatProps {
   onMessage?: (messages: ChatMessage[]) => void;
@@ -119,38 +126,40 @@ export const RealtimeChat = ({
   });
 
   return (
-    <div className="flex flex-col max-h-full bg-card-background rounded-[24px] text-foreground">
-      {/* Header / Load more button */}
-      <div className="flex items-center justify-between px-4 py-2">
-        <div className="text-sm text-muted-foreground">
-          {isConnected ? (
-            <div className="flex items-center gap-2">
-              <span className="text-red-500">Live</span>
-              <span className="text-xs text-muted-foreground">
-                {new Date().toLocaleTimeString()}
-              </span>
+    <Card className="max-h-full">
+      <CardHeader>
+        <CardTitle>
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="text-sm text-muted-foreground">
+              {isConnected ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-red-500">Live</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date().toLocaleTimeString()}
+                  </span>
+                </div>
+              ) : (
+                "Холбогдож байна…"
+              )}
             </div>
-          ) : (
-            "Холбогдож байна…"
-          )}
-        </div>
-        {hasMore && isNearTop && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={loadMore}
-            disabled={isLoading}
-          >
-            {isLoading ? "Уншиж байна…" : "Өмнөх чат мэссэжүүдийг унших"}
-          </Button>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div
+            {hasMore && isNearTop && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? "Уншиж байна…" : "Өмнөх чат мэссэжүүдийг унших"}
+              </Button>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent
         ref={containerRef}
-        className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4 relative scrollbar-custom"
+        className="relative flex flex-col max-h-full text-foreground  overflow-y-auto scrollbar-custom"
       >
+        {/* Messages */}
         {allMessages.length === 0 ? (
           <div className="text-center text-sm text-muted-foreground">
             Чат хоосон байна. Та эхлүүлэх үү?
@@ -290,16 +299,15 @@ export const RealtimeChat = ({
             </Button>
           </div>
         )}
-      </div>
-
-      {/* Composer */}
-      <div className="relative">
+      </CardContent>
+      <CardFooter className="relative">
+        {/* Composer */}
         <form
           onSubmit={handleSendMessage}
           className="flex w-full border-t border-border p-4"
         >
           <div
-            className="flex items-center w-full px-4 py-3 gap-3 border-none bg-card-background"
+            className="flex items-center w-full px-4 py-3 gap-3 border-none "
             style={{ backgroundColor: "#34373C", borderRadius: "16px" }}
           >
             {/* Emoji button */}
@@ -342,7 +350,7 @@ export const RealtimeChat = ({
           onEmojiSelect={handleEmojiSelect}
           onClose={closeEmojiPicker}
         />
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };

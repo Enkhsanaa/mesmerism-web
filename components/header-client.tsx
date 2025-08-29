@@ -3,7 +3,7 @@
 import { useModal } from "@/app/(dashboard)/modal-provider";
 import { useRealtime } from "@/app/(dashboard)/realtime-provider";
 import { useUserStore } from "@/hooks/use-user-store";
-import { formatAmount } from "@/lib/utils";
+import { cn, formatAmount } from "@/lib/utils";
 import {
   Calendar,
   ChevronDown,
@@ -25,18 +25,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { HTMLAttributes } from "react";
 
-export default function HeaderClient() {
+export default function HeaderClient({
+  className,
+}: {
+  className?: HTMLAttributes<HTMLDivElement>["className"];
+}) {
   const { setCoinModalOpen } = useModal();
   const { supabase } = useRealtime();
   const { userOverview } = useUserStore();
   const isAdmin = userOverview?.roles.includes("admin");
 
   return (
-    <header className="bg-dark-background">
+    <header
+      className={cn(
+        "bg-dark-background shadow-[0_0_0_100vmax_var(--dark-background)] [clip-path:inset(0_-100vmax)]",
+        className
+      )}
+    >
       <nav
         aria-label="Global"
-        className="flex w-full items-center justify-between p-6 lg:px-8"
+        className="flex w-full items-center justify-between py-6"
       >
         <div className="flex items-center gap-x-4">
           <a href="/" className="-m-1.5 p-1.5">

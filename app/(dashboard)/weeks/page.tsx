@@ -65,7 +65,7 @@ export default function WeeksPage() {
 
   return (
     <main className="mt-4">
-      <Card className="p-4 bg-card-background">
+      <Card className="p-4">
         <h1 className="text-2xl font-bold">Тэмцээний 7 хонгууд</h1>
         <Table>
           <TableHeader>

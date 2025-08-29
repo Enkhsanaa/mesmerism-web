@@ -199,158 +199,144 @@ export default function CoinSelectModal() {
   return (
     <Dialog open={coinModalOpen} onOpenChange={handleOpenCloseModal}>
       <DialogTitle className="sr-only">Coin авах</DialogTitle>
-      <DialogContent>
-        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none bg-black/50">
-          <Card className="w-full max-w-md bg-card-background border-none text-white pointer-events-auto flex flex-col justify-between gap-10">
-            <CardHeader className="flex flex-col items-center justify-between">
-              <div className="w-full flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl font-semiboldtext-white">
-                  Coin авах
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenCloseModal(false)}
-                  className="h-[48px] w-[48px] p-0text-white hover:bg-[#34373C]"
-                >
-                  <X className="h-[20px] w-[20px]" />
-                </Button>
-              </div>
-              {!paymentSuccess && (
-                <p className="text-base font-normaltext-white">
-                  Та Coin худалдаж авах хэмжээгээ оруулж үргэлжлүүлнэ үү.
-                </p>
-              )}
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center gap-4">
-              {/* Coin selection */}
-              {paymentSuccess ? (
-                <div className="flex flex-col items-center justify-center gap-4">
-                  <div className="size-16 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckIcon className="size-8 text-white" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-white mb-2">
-                      Төлбөр баталгаажлаа!
-                    </p>
-                    <p className="text-base text-white flex items-center justify-center gap-2">
-                      {formatAmount(confirmedAmount)}{" "}
-                      <CoinIcon className="size-5 text-[#FAD02C]" /> таны данс
-                      руу нэмэгдлээ.
-                    </p>
-                    <p className="text-sm text-gray-400 mt-2">
-                      Та өөрийн дэмжиж буй Youtuber дээ саналаа өгөөрэй
-                    </p>
-                  </div>
+      <DialogContent className="p-0 max-w-md">
+        <Card className="border-none text-white flex flex-col justify-between gap-10">
+          <CardHeader className="flex flex-col items-center justify-between">
+            <div className="w-full flex flex-row items-center justify-between">
+              <CardTitle className="text-2xl font-semiboldtext-white">
+                Coin авах
+              </CardTitle>
+            </div>
+            {!paymentSuccess && (
+              <p className="text-base font-normaltext-white">
+                Та Coin худалдаж авах хэмжээгээ оруулж үргэлжлүүлнэ үү.
+              </p>
+            )}
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center gap-4">
+            {/* Coin selection */}
+            {paymentSuccess ? (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <div className="size-16 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckIcon className="size-8 text-white" />
                 </div>
-              ) : paymentError ? (
-                <div className="flex flex-col items-center justify-center gap-4">
-                  <div className="size-16 bg-red-500 rounded-full flex items-center justify-center">
-                    <X className="h-[32px] w-[32px] text-white" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-white mb-2">
-                      Төлбөр амжилтгүй боллоо
-                    </p>
-                    <p className="text-base text-white">
-                      Та дахин оролдоно уу.
-                    </p>
-                  </div>
-                </div>
-              ) : isWaitingPayment ? (
-                <div className="flex flex-col items-center justify-center gap-4">
-                  <Loader color="white" />
-                  <p className="text-base font-normaltext-white">
-                    Төлбөр баталгаажихыг хүлээж байна.
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-white mb-2">
+                    Төлбөр баталгаажлаа!
+                  </p>
+                  <p className="text-base text-white flex items-center justify-center gap-2">
+                    {formatAmount(confirmedAmount)}{" "}
+                    <CoinIcon className="size-5 text-[#FAD02C]" /> таны данс руу
+                    нэмэгдлээ.
+                  </p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Та өөрийн дэмжиж буй Youtuber дээ саналаа өгөөрэй
                   </p>
                 </div>
-              ) : (
-                <div className="grid w-full">
-                  {COIN_OPTIONS.map((option) => (
-                    <CoinOption
-                      key={`coin-select-${option}`}
-                      coins={option}
-                      selected={selectedCoins}
-                      onSelect={() => {
-                        const input = document.getElementById(
-                          "custom-coin-input"
-                        ) as HTMLInputElement;
-                        if (input) {
-                          input.value = option.toString();
-                        }
-                        setSelectedCoins(option);
-                      }}
-                    />
-                  ))}
-                  <Collapsible className="flex flex-col gap-2 pt-10">
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="w-full">
-                        <p className="text-sm text-[#DCDDDE]">
-                          or custom amount of coins
-                        </p>
-                        <ChevronDown className="size-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <Input
-                        id="custom-coin-input"
-                        type="number"
-                        min={10}
-                        placeholder="Enter amount"
-                        className="w-full bg-[#34373C] text-white rounded-[24px]"
-                        onChange={(e) =>
-                          setSelectedCoins(Number(e.target.value))
-                        }
-                        step={10}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
+              </div>
+            ) : paymentError ? (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <div className="size-16 bg-red-500 rounded-full flex items-center justify-center">
+                  <X className="h-[32px] w-[32px] text-white" />
                 </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex flex-row items-center justify-between gap-2">
-              {paymentSuccess ? (
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => {
-                    setPaymentSuccess(false);
-                    setCoinModalOpen(false);
-                    setSelectedCoins(0);
-                  }}
-                >
-                  Хаах
-                </Button>
-              ) : paymentError ? (
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-white mb-2">
+                    Төлбөр амжилтгүй боллоо
+                  </p>
+                  <p className="text-base text-white">Та дахин оролдоно уу.</p>
+                </div>
+              </div>
+            ) : isWaitingPayment ? (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <Loader color="white" />
+                <p className="text-base font-normaltext-white">
+                  Төлбөр баталгаажихыг хүлээж байна.
+                </p>
+              </div>
+            ) : (
+              <div className="grid w-full">
+                {COIN_OPTIONS.map((option) => (
+                  <CoinOption
+                    key={`coin-select-${option}`}
+                    coins={option}
+                    selected={selectedCoins}
+                    onSelect={() => {
+                      const input = document.getElementById(
+                        "custom-coin-input"
+                      ) as HTMLInputElement;
+                      if (input) {
+                        input.value = option.toString();
+                      }
+                      setSelectedCoins(option);
+                    }}
+                  />
+                ))}
+                <Collapsible className="flex flex-col gap-2 pt-10">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full">
+                      <p className="text-sm text-[#DCDDDE]">
+                        or custom amount of coins
+                      </p>
+                      <ChevronDown className="size-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Input
+                      id="custom-coin-input"
+                      type="number"
+                      min={10}
+                      placeholder="Enter amount"
+                      className="w-full bg-[#34373C] text-white rounded-[24px]"
+                      onChange={(e) => setSelectedCoins(Number(e.target.value))}
+                      step={10}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-row items-center justify-between gap-2">
+            {paymentSuccess ? (
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  setPaymentSuccess(false);
+                  setCoinModalOpen(false);
+                  setSelectedCoins(0);
+                }}
+              >
+                Хаах
+              </Button>
+            ) : paymentError ? (
+              <Button
+                variant="ghost"
+                className="w-[89px]"
+                onClick={() => handleOpenCloseModal(false)}
+                disabled={isWaitingPayment}
+              >
+                Хаах
+              </Button>
+            ) : (
+              <>
                 <Button
                   variant="ghost"
                   className="w-[89px]"
                   onClick={() => handleOpenCloseModal(false)}
                   disabled={isWaitingPayment}
                 >
-                  Хаах
+                  Болих
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    className="w-[89px]"
-                    onClick={() => handleOpenCloseModal(false)}
-                    disabled={isWaitingPayment}
-                  >
-                    Болих
-                  </Button>
-                  <Button
-                    disabled={selectedCoins <= 0 || isWaitingPayment}
-                    className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
-                    onClick={() => handleCheckout(selectedCoins ?? 0)}
-                  >
-                    {isWaitingPayment ? "Хүлээж байна..." : "Төлбөр төлөх"}
-                  </Button>
-                </>
-              )}
-            </CardFooter>
-          </Card>
-        </div>
+                <Button
+                  disabled={selectedCoins <= 0 || isWaitingPayment}
+                  className="bg-[#FAD02C] text-[#212121] rounded-[24px] h-[48px] w-[131px] disabled:bg-[#333333] disabled:text-[#888888] disabled:border-[#34373C] disabled:border-[1px]"
+                  onClick={() => handleCheckout(selectedCoins ?? 0)}
+                >
+                  {isWaitingPayment ? "Хүлээж байна..." : "Төлбөр төлөх"}
+                </Button>
+              </>
+            )}
+          </CardFooter>
+        </Card>
       </DialogContent>
     </Dialog>
   );

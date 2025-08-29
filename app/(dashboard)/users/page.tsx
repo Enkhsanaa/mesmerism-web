@@ -200,7 +200,7 @@ export default function UsersPage() {
 
   return (
     <main className="mt-4 space-y-4">
-      <Card className="p-4 bg-card-background">
+      <Card className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 className="text-2xl font-bold text-white">
             Хэрэглэгчид ({totalUsers})

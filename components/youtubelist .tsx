@@ -12,6 +12,7 @@ import Fire from "./icons/fire";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { GlassButton } from "./ui/glass-button";
 import { Input } from "./ui/input";
+import { Card, CardContent } from "./ui/card";
 
 // Fuzzy search function
 function fuzzySearch(query: string, text: string): boolean {
@@ -305,99 +306,101 @@ export default function Youtubelist() {
   console.log("rerendering");
 
   return (
-    <div className="flex flex-col gap-6 bg-[#292B2F] rounded-3xl p-8 max-h-[80vh] overflow-hidden">
-      <motion.div
-        className="relative w-full m-0 p-0"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-      >
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#DCDDDE] w-5 h-5" />
-        <Input
-          type="text"
-          name="search"
-          placeholder="Youtuber хайх"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
-        />
-      </motion.div>
-
-      {searchQuery && (
+    <Card>
+      <CardContent className="flex flex-col gap-6">
         <motion.div
-          className="text-sm text-gray-400 mb-2"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
+          className="relative w-full m-0 p-0"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
         >
-          {filteredCreators.length} Youtuber олдлоо
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#DCDDDE] w-5 h-5" />
+          <Input
+            type="text"
+            name="search"
+            placeholder="Youtuber хайх"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 pr-12 bg-[#34373C] border-[#34373C] text-[#DCDDDE] placeholder:text-[#DCDDDE] h-12 rounded-lg"
+          />
         </motion.div>
-      )}
 
-      <div className="grid gap-4 relative">
-        <AnimatePresence mode="popLayout">
-          {isLoading ? (
-            // Show skeleton loaders while loading
-            Array.from({ length: 40 }).map((_, index) => (
+        {searchQuery && (
+          <motion.div
+            className="text-sm text-gray-400 mb-2"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {filteredCreators.length} Youtuber олдлоо
+          </motion.div>
+        )}
+
+        <div className="grid gap-4 relative">
+          <AnimatePresence mode="popLayout">
+            {isLoading ? (
+              // Show skeleton loaders while loading
+              Array.from({ length: 4 }).map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    duration: 0.3,
+                    delay: index * 0.1,
+                  }}
+                >
+                  <CreatorCardSkeleton />
+                </motion.div>
+              ))
+            ) : filteredCreators.length > 0 ? (
+              // Show actual creators when loaded
+              filteredCreators.map((creator, index) => (
+                <motion.div
+                  key={creator.creatorId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: index * 0.1,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                  }}
+                >
+                  <CreatorCard
+                    creator={creator}
+                    previousRank={previousRanks.get(creator.creatorId) || null}
+                  />
+                </motion.div>
+              ))
+            ) : searchQuery ? (
+              // Show no search results message
               <motion.div
-                key={`skeleton-${index}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{
-                  duration: 0.3,
-                  delay: index * 0.1,
-                }}
+                className="text-center py-12 text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                <CreatorCardSkeleton />
+                <p>"{searchQuery}" гэсэн хайлтад тохирох Youtuber олдсонгүй</p>
               </motion.div>
-            ))
-          ) : filteredCreators.length > 0 ? (
-            // Show actual creators when loaded
-            filteredCreators.map((creator, index) => (
+            ) : (
+              // Show empty state when no creators found
               <motion.div
-                key={creator.creatorId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{
-                  duration: 0.4,
-                  delay: index * 0.1,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
+                className="text-center py-12 text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                <CreatorCard
-                  creator={creator}
-                  previousRank={previousRanks.get(creator.creatorId) || null}
-                />
+                <p>Энэ 7 хоногт өрсөлдөх Youtuber-үүд сонгогдоогүй байна</p>
               </motion.div>
-            ))
-          ) : searchQuery ? (
-            // Show no search results message
-            <motion.div
-              className="text-center py-12 text-gray-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <p>"{searchQuery}" гэсэн хайлтад тохирох Youtuber олдсонгүй</p>
-            </motion.div>
-          ) : (
-            // Show empty state when no creators found
-            <motion.div
-              className="text-center py-12 text-gray-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <p>Энэ 7 хоногт өрсөлдөх Youtuber-үүд сонгогдоогүй байна</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -146,7 +146,7 @@ export function LivechatClient() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button
-              className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg hover:bg-primary/90 text-[#FAD02C] transition-all duration-200 hover:scale-105 active:scale-95 group bg-card-background"
+              className="fixed bottom-6 right-6 z-50 shadow-lg text-[#FAD02C] transition-all duration-200 hover:scale-105 active:scale-95 group bg-dark-background size-14"
               size="icon"
               aria-label="Open live chat"
               onClick={handleOpenChat}

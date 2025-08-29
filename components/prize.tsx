@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { useWeekStore } from "@/hooks/use-week-store";
+import { Card, CardContent } from "./ui/card";
 
 const pressStart2P = Press_Start_2P({ subsets: ["latin"], weight: "400" });
 
@@ -73,11 +74,8 @@ export default function Prize() {
   }
 
   return (
-    <div
-      className="flex justify-center py-4 w-full rounded-3xl"
-      style={{ backgroundColor: "#292B2F" }}
-    >
-      <div className="flex flex-col gap-4">
+    <Card>
+      <CardContent>
         <div className="flex flex-col gap-2">
           <h1
             className={`${pressStart2P.className} text-xl md:text-2xl font-bold text-center mt-4`}
@@ -125,7 +123,7 @@ export default function Prize() {
             <p>Deadline: {getTimeRemaining(activeWeekData?.ends_at || null)}</p>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

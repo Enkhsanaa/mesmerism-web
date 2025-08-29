@@ -3,7 +3,7 @@
 
 @theme inline {
   /* Figma colors */
-  --color-dark-background: #202225;
+  --color-dark-background: var(--dark-background);
   --color-border: #333333;
 
   --color-background: var(--background);
@@ -48,6 +48,7 @@
 
 :root {
   --radius: 0.625rem;
+  --dark-background: #202225;
   /* --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0); */
   --background: #2f3136;
@@ -90,7 +91,15 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    min-height: 100dvh;
+    background: radial-gradient(
+        1200px 800px at 80% -10%,
+        #1e293b20,
+        transparent
+      ),
+      radial-gradient(900px 600px at -20% 10%, #7c3aed22, transparent),
+      var(--color-background);
+    color: var(--foreground);
   }
 }
 
@@ -312,4 +321,46 @@
   .glass-button:active .glass-button-text:after {
     --angle-2: -45deg;
   }
+}
+
+.glass-card {
+  @apply bg-card-background/5 hover:bg-card-background/10
+  border border-white/10
+  shadow-none hover:shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_0_0_1px_rgba(255,255,255,0.03)] 
+  backdrop-blur-md rounded-3xl transition-all;
+}
+
+/* Skeleton shimmer */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.05) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+::selection {
+  background: var(--button-yellow);
+  color: black;
 }

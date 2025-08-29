@@ -177,7 +177,7 @@ export default function TopupsPage() {
   if (loading) {
     return (
       <main className="mt-4">
-        <Card className="bg-card-background border-none">
+        <Card className=" border-none">
           <div className="p-6">
             <div className="flex items-center justify-center py-12">
               <RefreshCw className="animate-spin size-6 text-white" />
@@ -191,7 +191,7 @@ export default function TopupsPage() {
 
   return (
     <main className="mt-4">
-      <Card className="bg-card-background border-none">
+      <Card className=" border-none">
         <div className="p-6">
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">

@@ -153,7 +153,7 @@ export default function VoteSuccessModal() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none bg-black/50">
-      <Card className="w-full max-w-md bg-card-background border-none text-white pointer-events-auto flex flex-col justify-between gap-10">
+      <Card className="w-full max-w-md  border-none text-white pointer-events-auto flex flex-col justify-between gap-10">
         <CardHeader className="flex flex-col items-center justify-between">
           <div className="w-full flex flex-row items-center justify-between">
             <CardTitle className="flex flex-row items-center gap-4">

@@ -21,7 +21,7 @@ export default function DashboardLayout({
         <SystemAnnouncementListener />
         <UserSuspensionListener />
 
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl flex flex-col gap-5 px-2">
           <HeaderClient />
           {children}
           <Toaster position="bottom-right" richColors />

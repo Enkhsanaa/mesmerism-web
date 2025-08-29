@@ -94,7 +94,7 @@ export default function TimeoutBanModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-card-background border-gray-700">
+      <DialogContent className="sm:max-w-md  border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-white">Хэрэглэгчийг бандах</DialogTitle>
           <DialogDescription className="text-gray-300">

@@ -122,8 +122,8 @@ export default function VoteModal() {
   return (
     <Dialog open={voteModalOpen} onOpenChange={setVoteModalOpen}>
       <DialogTitle className="sr-only">Санал өгөх</DialogTitle>
-      <DialogContent className="bg-card-background p-0 max-w-md ">
-        <Card className="border-none text-white flex flex-col justify-between gap-10 bg-transparent">
+      <DialogContent className="p-0 max-w-md">
+        <Card className="border-none text-white flex flex-col justify-between gap-10">
           <CardHeader className="flex flex-col items-center justify-between">
             <div className="w-full flex flex-row items-center justify-between">
               <CardTitle className="text-2xl font-semiboldtext-white">
@@ -164,7 +164,7 @@ export default function VoteModal() {
                 type="number"
                 defaultValue={selectedCoins}
                 onChange={(e) => setSelectedCoins(Number(e.target.value))}
-                className="text-white font-semibold text-sm bg-[#34373C] rounded-[24px] w-[100px] h-[48px] px-[10px] border-none text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none"
+                className="text-white font-semibold text-sm bg-[#34373C] rounded-[24px] w-[100px] h-[48px] px-[10px] border-none text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-moz-number-spin-button]:appearance-none accent-[red]"
               />
               <Button
                 size="icon"

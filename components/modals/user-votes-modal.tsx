@@ -119,7 +119,7 @@ export default function UserVotesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-5xl bg-card-background border-gray-700">
+      <DialogContent className="sm:max-w-5xl  border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-3">
             <Avatar className="size-8">

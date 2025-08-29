@@ -23,7 +23,7 @@ export default function Login() {
   >(login, { error: null, success: false, email: "", password: "" });
 
   return (
-    <Card className="w-full h-full md:max-w-[576px] bg-card-background border-none p-0">
+    <Card className="w-full h-full md:max-w-[576px] p-0">
       <CardContent className="md:my-[64px] md:mx-[64px] my-[24px] mx-[16px] flex flex-col items-center justify-center gap-[32px] p-0">
         {/* Logo and Brand */}
         <MesmerismIcon className="h-[64px] w-[88px] text-[#DCDDDE]" />
@@ -145,15 +145,16 @@ export default function Login() {
           {/* Register Button */}
           <Button
             type="button"
+            variant="glass-dark"
             onClick={() => router.push("/auth/register")}
-            className="w-full bg-card-background hover:bg-background text-[#DCDDDE] font-semibold h-12 rounded-lg text-sm shadow-none"
+            className="w-full text-[#DCDDDE] font-semibold h-12 rounded-lg text-sm"
           >
             Бүртгүүлэх
           </Button>
         </form>
         <div className="relative flex items-center justify-center w-full">
           <Separator className="absolute inset-x-0" />
-          <div className="relative z-10 bg-card-background px-4 text-sm text-muted-foreground">
+          <div className="relative z-10  px-4 text-sm text-muted-foreground">
             эсвэл
           </div>
         </div>

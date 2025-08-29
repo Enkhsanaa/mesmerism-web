@@ -24,7 +24,7 @@ export default function Banner() {
   if (bannerLoading) {
     return (
       <div className="flex justify-center py-6">
-        <div className="w-full aspect-[6.52736318] bg-card-background animate-pulse rounded-lg" />
+        <div className="w-full aspect-[6.52736318]  animate-pulse rounded-lg" />
       </div>
     );
   }
@@ -33,7 +33,7 @@ export default function Banner() {
   if (!isAdmin) {
     return (
       <div className="flex justify-center py-6">
-        <div className="w-full aspect-[6.52736318] bg-card-background rounded-lg overflow-hidden relative">
+        <div className="w-full aspect-[6.52736318]  rounded-lg overflow-hidden relative">
           <Image
             src={bannerUrl || ""}
             alt="Home Banner"
@@ -50,9 +50,9 @@ export default function Banner() {
 
   return (
     <>
-      <div className="flex justify-center py-6 relative">
+      <div className="flex justify-center relative glass">
         {bannerUrl ? (
-          <div className="relative w-full aspect-[6.52736318] rounded-lg overflow-hidden">
+          <div className="relative w-full aspect-[6.52736318] overflow-hidden">
             <Image
               src={bannerUrl}
               alt="Home Banner"
@@ -85,7 +85,7 @@ export default function Banner() {
             </div>
           </div>
         ) : (
-          <div className="w-full aspect-[6.52736318] bg-card-background rounded-lg flex items-center justify-center">
+          <div className="w-full aspect-[6.52736318]  flex items-center justify-center">
             <Button
               variant="outline"
               onClick={() => setShowEditModal(true)}
